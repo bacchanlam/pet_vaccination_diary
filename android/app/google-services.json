@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "727109315720",
+    "project_id": "doanlaptrinhdidong-377e7",
+    "storage_bucket": "doanlaptrinhdidong-377e7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:727109315720:android:cffe3c3383decc8b8f433d",
+        "android_client_info": {
+          "package_name": "com.example.pet_vaccination_diary"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxXAr-M1DNOxoEsE1DIolBdDrtk-DBPKQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
