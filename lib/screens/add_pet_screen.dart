@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/pet.dart';
 import '../providers/pet_provider.dart';
+import '../services/cloudinary_service.dart';
 
 class AddPetScreen extends StatefulWidget {
   final Pet? pet;
@@ -17,11 +20,15 @@ class _AddPetScreenState extends State<AddPetScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _breedController = TextEditingController();
+  final _cloudinaryService = CloudinaryService();
+  final _imagePicker = ImagePicker();
   
   String _selectedType = 'Chó';
-  String _selectedGender = 'Đực'; // Thêm giới tính
+  String _selectedGender = 'Đực';
   DateTime _birthDate = DateTime.now();
   bool _isLoading = false;
+  File? _imageFile;
+  String? _imageUrl;
 
   final List<String> _petTypes = [
     'Chó',
@@ -32,7 +39,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
     'Khác',
   ];
 
-  final List<String> _genders = ['Đực', 'Cái']; // Danh sách giới tính
+  final List<String> _genders = ['Đực', 'Cái'];
 
   @override
   void initState() {
@@ -43,6 +50,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
       _selectedType = widget.pet!.type;
       _selectedGender = widget.pet!.gender;
       _birthDate = widget.pet!.birthDate;
+      _imageUrl = widget.pet!.imageUrl;
     }
   }
 
@@ -51,6 +59,32 @@ class _AddPetScreenState extends State<AddPetScreen> {
     _nameController.dispose();
     _breedController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _imageFile = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi chọn ảnh: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _selectDate() async {
@@ -74,12 +108,35 @@ class _AddPetScreenState extends State<AddPetScreen> {
       _isLoading = true;
     });
 
+    String? uploadedImageUrl = _imageUrl;
+
+    // Upload ảnh lên Cloudinary nếu có chọn ảnh mới
+    if (_imageFile != null) {
+      uploadedImageUrl = await _cloudinaryService.uploadImage(_imageFile!);
+      
+      if (uploadedImageUrl == null) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Lỗi upload ảnh, vui lòng thử lại!'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
     final pet = Pet(
       name: _nameController.text.trim(),
       type: _selectedType,
       breed: _breedController.text.trim(),
       gender: _selectedGender,
       birthDate: _birthDate,
+      imageUrl: uploadedImageUrl,
     );
 
     final petProvider = context.read<PetProvider>();
@@ -130,6 +187,55 @@ class _AddPetScreenState extends State<AddPetScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // Image picker
+            Center(
+              child: GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  width: 150,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.blue, width: 2),
+                  ),
+                  child: _imageFile != null
+                      ? ClipOval(
+                          child: Image.file(
+                            _imageFile!,
+                            width: 150,
+                            height: 150,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : _imageUrl != null
+                          ? ClipOval(
+                              child: Image.network(
+                                _imageUrl!,
+                                width: 150,
+                                height: 150,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stack) =>
+                                    const Icon(Icons.pets, size: 60),
+                              ),
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_a_photo,
+                                    size: 40, color: Colors.grey[600]),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Thêm ảnh',
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // Name field
             TextFormField(
               controller: _nameController,
@@ -187,7 +293,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Gender dropdown - THÊM MỚI
+            // Gender dropdown
             DropdownButtonFormField<String>(
               value: _selectedGender,
               decoration: const InputDecoration(
