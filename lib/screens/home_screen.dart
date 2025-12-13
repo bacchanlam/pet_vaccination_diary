@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../providers/pet_provider.dart';
 import '../providers/vaccination_provider.dart';
+import '../services/auth_service.dart';
 import 'add_pet_screen.dart';
 import 'pet_detail_screen.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -24,10 +27,70 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nhật Ký Tiêm Phòng'),
         elevation: 0,
+        actions: [
+          // User info và logout
+          if (user != null)
+            PopupMenuButton<String>(
+              icon: CircleAvatar(
+                backgroundColor: Colors.blue[100],
+                child: Text(
+                  (user.displayName != null && user.displayName!.isNotEmpty)
+                      ? user.displayName!.substring(0, 1).toUpperCase()
+                      : 'U',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              itemBuilder: (context) => [
+                PopupMenuItem<String>(
+                  enabled: false,
+                  value: 'info',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.displayName ?? 'Người dùng',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        user.email ?? '',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, size: 20),
+                      SizedBox(width: 8),
+                      Text('Đăng xuất'),
+                    ],
+                  ),
+                ),
+              ],
+              onSelected: (value) async {
+                if (value == 'logout') {
+                  await AuthService().signOut();
+                  if (context.mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+        ],
       ),
       body: Consumer2<PetProvider, VaccinationProvider>(
         builder: (context, petProvider, vaccinationProvider, child) {

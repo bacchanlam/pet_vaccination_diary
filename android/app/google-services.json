@@ -12,7 +12,20 @@
           "package_name": "com.example.pet_vaccination_diary"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "727109315720-hhebgk44j3tu82smiq9d06qo9df59rqh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.pet_vaccination_diary",
+            "certificate_hash": "a5422347759981d46daa86b924b50b453bd12b87"
+          }
+        },
+        {
+          "client_id": "727109315720-j4s03686itnbknl8jdfe0d0ao0qv9jtn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBxXAr-M1DNOxoEsE1DIolBdDrtk-DBPKQ"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "727109315720-j4s03686itnbknl8jdfe0d0ao0qv9jtn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

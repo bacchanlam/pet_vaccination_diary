@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart';
 import 'providers/pet_provider.dart';
 import 'providers/vaccination_provider.dart';
 
@@ -22,13 +22,14 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => VaccinationProvider()),
       ],
       child: MaterialApp(
-        title: 'Nhật Ký Tiêm Phòng',
+        title: 'Pet Vaccination Diary',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primarySwatch: Colors.blue,
+          primarySwatch: Colors.orange,
+          primaryColor: const Color(0xFFFF9966),
           useMaterial3: true,
         ),
-        home: const HomeScreen(),
+        home: const SplashScreen(),
       ),
     );
   }
