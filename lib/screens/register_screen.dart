@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import 'home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -42,26 +41,83 @@ class _RegisterScreenState extends State<RegisterScreen> {
       name: _nameController.text.trim(),
     );
 
-    setState(() {
-      _isLoading = false;
-    });
-
     if (error == null) {
-      // Đăng ký thành công
+      // ĐỢI 1 giây để đảm bảo Firestore đã lưu xong
+      await Future.delayed(const Duration(seconds: 1));
+      
+      // Bây giờ mới đăng xuất
+      await _authService.signOut();
+      
+      setState(() {
+        _isLoading = false;
+      });
+      
+      print('✅ Registration successful - logged out, redirecting to login');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đăng ký thành công! Chào mừng bạn!'),
-            backgroundColor: Colors.green,
+        // Hiển thị dialog thành công
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green[100],
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text('Thành công!'),
+              ],
+            ),
+            content: const Text(
+              'Tài khoản của bạn đã được tạo thành công!\n\nVui lòng đăng nhập để tiếp tục sử dụng ứng dụng.',
+              style: TextStyle(fontSize: 16, height: 1.5),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Đóng dialog
+                  Navigator.pop(context); // Quay về login
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF9966),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  minimumSize: const Size(double.infinity, 48),
+                ),
+                child: const Text(
+                  'Đăng nhập ngay',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
+            actionsAlignment: MainAxisAlignment.center,
           ),
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
     } else {
       // Có lỗi
+      print('❌ Registration error: $error');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

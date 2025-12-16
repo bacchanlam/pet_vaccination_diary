@@ -31,42 +31,35 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _emailController.text.trim(),
     );
 
+    if (!mounted) return;
+
     setState(() {
       _isLoading = false;
     });
 
     if (error == null) {
-      // Gửi email thành công
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Thành công!'),
-            content: const Text(
-              'Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư của bạn.',
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Thành công!'),
+          content: const Text(
+            'Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư của bạn.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // đóng dialog
+                Navigator.pop(context); // quay về login
+              },
+              child: const Text('OK'),
             ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Đóng dialog
-                  Navigator.pop(context); // Quay về login
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
+          ],
+        ),
+      );
     } else {
-      // Có lỗi
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: Colors.red),
+      );
     }
   }
 

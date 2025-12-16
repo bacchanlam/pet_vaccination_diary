@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'login_screen.dart';
-import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -34,24 +30,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     );
 
     _controller.forward();
-
-    // Check auth state và chuyển màn hình sau 3 giây
-    Timer(const Duration(seconds: 3), () {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        // Đã đăng nhập → vào Home
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      } else {
-        // Chưa đăng nhập → vào Login
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-      }
-    });
   }
 
   @override
