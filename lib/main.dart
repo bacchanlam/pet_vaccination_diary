@@ -94,14 +94,26 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        // Đã có user → Home
+        // 🆕 KIỂM TRA USER VÀ EMAIL VERIFICATION
         if (snapshot.hasData && snapshot.data != null) {
-          print('✅ Navigating to HomeScreen');
-          return const HomeScreen();
+          final user = snapshot.data!;
+          print('📧 User email verified: ${user.emailVerified}');
+          
+          // Kiểm tra email đã xác thực chưa
+          if (user.emailVerified) {
+            print('✅ Email verified - Navigating to HomeScreen');
+            return const HomeScreen();
+          } else {
+            // Email chưa xác thực
+            // QUAN TRỌNG: Không tự động đăng xuất ở đây
+            // Để AuthService xử lý việc đăng xuất
+            print('⚠️ Email not verified - showing LoginScreen but keeping user signed in temporarily');
+            return const LoginScreen();
+          }
         }
 
         // Chưa có user → Login
-        print('➡️ Navigating to LoginScreen');
+        print('➡️ No user - Navigating to LoginScreen');
         return const LoginScreen();
       },
     );
