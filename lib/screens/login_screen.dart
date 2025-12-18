@@ -26,6 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // Trong file login_screen.dart, cập nhật hàm _login:
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -33,172 +35,146 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    final error = await _authService.signIn(
-      email: _emailController.text.trim(),
-      password: _passwordController.text.trim(),
-    );
+    try {
+      final error = await _authService.signIn(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
 
-    // QUAN TRỌNG: Luôn tắt loading sau khi có kết quả
-    if (mounted) {
+      if (!mounted) return;
+
       setState(() {
-        _isLoading = false;
+        _isLoading = false; // Đảm bảo luôn tắt loading sau khi nhận kết quả
       });
-    }
 
-    if (error == null) {
-      // Đăng nhập thành công và email đã xác thực
-      print('✅ Login successful - StreamBuilder will redirect to HomeScreen');
-      // Không cần Navigator vì StreamBuilder sẽ tự động chuyển trang
-    } else {
-      // Có lỗi
-      print('❌ Login error: $error');
+      if (error == null) {
+        print('✅ Login successful');
+      } else if (error == 'EMAIL_NOT_VERIFIED') {
+        _showEmailVerificationDialog(); // Hiển thị dialog thông báo ngay lập tức
+      } else {
+        // Hiển thị các lỗi khác
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
       if (mounted) {
-        // Kiểm tra nếu lỗi là email chưa xác thực
-        if (error.contains('Email chưa được xác thực')) {
-          _showEmailVerificationDialog(error);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(error),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 4),
-            ),
-          );
-        }
+        setState(() => _isLoading = false);
+        print('❌ Fatal error: $e');
       }
     }
   }
 
-  void _showEmailVerificationDialog(String message) {
+  void _showEmailVerificationDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 32),
-            SizedBox(width: 12),
-            Expanded(child: Text('Email chưa xác thực')),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(message, style: const TextStyle(fontSize: 15)),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange[200]!),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
+      barrierDismissible: false,
+      builder: (dialogContext) => Theme(
+        data: ThemeData.light(), // 🔥 FORCE LIGHT THEME
+        child: WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            backgroundColor: Colors.white, // 🔥 Nền trắng
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.mark_email_unread, color: Colors.orange, size: 32),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Email chưa xác thực',
+                    style: TextStyle(color: Colors.black), // 🔥 Text đen
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Vui lòng xác thực email của bạn để tiếp tục sử dụng ứng dụng.',
+                  style: TextStyle(fontSize: 15, color: Colors.black87), // 🔥
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange[200]!),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info_outline, color: Colors.orange, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'Hướng dẫn:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.email,
+                            color: Colors.orange,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _emailController.text.trim(),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black, // 🔥
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 20, color: Colors.grey), // 🔥
+                      const Text(
+                        '📌 Hướng dẫn:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black, // 🔥
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '1. Kiểm tra email (kể cả Spam)',
+                        style: TextStyle(color: Colors.black87), // 🔥
+                      ),
+                      const Text(
+                        '2. Click vào link xác thực',
+                        style: TextStyle(color: Colors.black87), // 🔥
+                      ),
+                      const Text(
+                        '3. Quay lại app và đăng nhập lại',
+                        style: TextStyle(color: Colors.black87), // 🔥
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  const Text('1. Kiểm tra email của bạn'),
-                  const Text('2. Tìm email từ Firebase'),
-                  const Text('3. Click vào link xác thực'),
-                  const Text('4. Quay lại và đăng nhập'),
-                  const SizedBox(height: 8),
-                  Text(
-                    '💡 Kiểm tra cả thư mục Spam!',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.orange[800],
-                      fontStyle: FontStyle.italic,
-                    ),
+                ),
+              ],
+            ),
+            actions: [
+              // Chỉ còn nút "OK"
+              TextButton(
+                onPressed: () async {
+                  await _authService.signOut();
+                  if (mounted) {
+                    Navigator.pop(dialogContext);
+                  }
+                },
+                child: const Text(
+                  'OK',
+                  style: TextStyle(
+                    color: Color(0xFFFF9966),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () async {
-              Navigator.pop(context);
-
-              // Đăng nhập tạm để gửi email
-              setState(() => _isLoading = true);
-
-              final signInError = await _authService.signIn(
-                email: _emailController.text.trim(),
-                password: _passwordController.text.trim(),
-              );
-
-              if (signInError != null &&
-                  !signInError.contains('Email chưa được xác thực')) {
-                // Lỗi khác (sai mật khẩu, v.v.)
-                setState(() => _isLoading = false);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(signInError),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-                return;
-              }
-
-              // Gửi email xác thực
-              final error = await _authService.resendVerificationEmail();
-              await _authService.signOut(); // Đăng xuất ngay sau khi gửi
-
-              setState(() => _isLoading = false);
-
-              if (mounted) {
-                if (error == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        '✅ Đã gửi lại email xác thực!\n\nVui lòng kiểm tra hộp thư của bạn.',
-                      ),
-                      backgroundColor: Colors.green,
-                      duration: Duration(seconds: 4),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(error), backgroundColor: Colors.red),
-                  );
-                }
-              }
-            },
-            icon: const Icon(Icons.email, color: Colors.white, size: 20),
-            label: const Text(
-              'Gửi lại email',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF9966),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-          ),
-        ],
       ),
     );
   }
