@@ -4,12 +4,14 @@ class UserProfile {
   final String uid;
   final String name;
   final String email;
+  final String? avatarUrl; // 🆕 Thêm trường avatar
   final DateTime createdAt;
 
   UserProfile({
     required this.uid,
     required this.name,
     required this.email,
+    this.avatarUrl, // 🆕 Avatar có thể null
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -19,6 +21,7 @@ class UserProfile {
       'uid': uid,
       'name': name,
       'email': email,
+      'avatarUrl': avatarUrl, // 🆕 Lưu avatar URL
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -30,6 +33,7 @@ class UserProfile {
       uid: doc.id,
       name: data['name'] ?? 'Người dùng',
       email: data['email'] ?? '',
+      avatarUrl: data['avatarUrl'], // 🆕 Lấy avatar URL
       createdAt: (data['createdAt'] as Timestamp).toDate(),
     );
   }

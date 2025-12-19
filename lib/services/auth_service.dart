@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/user.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -11,13 +12,34 @@ class AuthService {
   // Auth state changes stream
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  // 🆕 Lưu thông tin user vào Firestore
+  Future<void> _saveUserToFirestore(User user, String name) async {
+    try {
+      final userProfile = UserProfile(
+        uid: user.uid,
+        name: name,
+        email: user.email ?? '',
+        avatarUrl: null, // Ban đầu chưa có avatar
+      );
+
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .set(userProfile.toMap());
+
+      print('✅ User profile saved to Firestore');
+    } catch (e) {
+      print('❌ Error saving user to Firestore: $e');
+    }
+  }
+
   // Sign up with email and password
   Future<String?> signUp({
     required String email,
     required String password,
     required String name,
   }) async {
-    User? createdUser; // Lưu user ngay khi tạo
+    User? createdUser;
 
     try {
       UserCredential result = await _auth.createUserWithEmailAndPassword(
@@ -25,12 +47,17 @@ class AuthService {
         password: password,
       );
 
-      createdUser = result.user; // Lưu lại user
+      createdUser = result.user;
 
       // Update display name
       await result.user?.updateDisplayName(name);
 
-      // 🆕 GỬI EMAIL XÁC THỰC
+      // 🆕 Lưu thông tin user vào Firestore
+      if (createdUser != null) {
+        await _saveUserToFirestore(createdUser, name);
+      }
+
+      // Gửi email xác thực
       await result.user?.sendEmailVerification();
       print(
         '✅ Firebase signUp successful - Verification email sent to ${result.user?.email}',
@@ -50,7 +77,6 @@ class AuthService {
           return 'Đăng ký thất bại: ${e.message}';
       }
     } catch (e) {
-      // 🔧 WORKAROUND: Bỏ qua lỗi PigeonUserDetails vì nó là bug của Firebase
       final errorString = e.toString();
       print('⚠️ Caught error: $errorString');
 
@@ -60,28 +86,29 @@ class AuthService {
           '⚠️ Known Firebase bug detected - checking if signup succeeded...',
         );
 
-        // QUAN TRỌNG: Kiểm tra biến createdUser trước (trước khi bị đăng xuất)
         if (createdUser != null) {
           print('✅ User was created successfully: ${createdUser.email}');
 
-          // Đảm bảo email xác thực được gửi
+          // Lưu vào Firestore
+          await _saveUserToFirestore(createdUser, name);
+
           try {
             await createdUser.sendEmailVerification();
             print('✅ Verification email sent to ${createdUser.email}');
           } catch (emailError) {
             print('⚠️ Error sending verification email: $emailError');
-            // Không return lỗi vì tài khoản đã tạo thành công
           }
 
-          return null; // Success - tài khoản đã được tạo
+          return null;
         }
 
-        // Nếu createdUser null, thử kiểm tra currentUser
         await Future.delayed(const Duration(milliseconds: 300));
         final currentUser = _auth.currentUser;
 
         if (currentUser != null) {
           print('✅ Found user in currentUser: ${currentUser.email}');
+
+          await _saveUserToFirestore(currentUser, name);
 
           try {
             await currentUser.sendEmailVerification();
@@ -90,7 +117,7 @@ class AuthService {
             print('⚠️ Error sending verification email: $emailError');
           }
 
-          return null; // Success
+          return null;
         }
 
         print('❌ Cannot find created user - signup may have failed');
@@ -103,13 +130,11 @@ class AuthService {
   }
 
   // Sign in with email and password
-  // Sign in with email and password
   Future<String?> signIn({
     required String email,
     required String password,
   }) async {
     try {
-      // 1. Thực hiện đăng nhập
       UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -117,17 +142,12 @@ class AuthService {
 
       print('🔐 Sign in successful, checking email verification...');
 
-      // 2. 🔧 FIX LỖI TREO: Bọc reload() trong một try-catch riêng lẻ
-      // Lỗi PigeonUserDetails thường xảy ra tại đây. Bọc nó lại để nếu crash,
-      // logic bên dưới vẫn tiếp tục chạy được.
       try {
         await result.user?.reload();
       } catch (e) {
         print('⚠️ Firebase reload bug (PigeonUserDetails) ignored: $e');
-        // Không return ở đây, cứ để logic chạy tiếp xuống dưới
       }
 
-      // Lấy user hiện tại sau khi đã cố gắng reload
       final user = _auth.currentUser;
 
       if (user == null) {
@@ -138,17 +158,15 @@ class AuthService {
 
       print('📧 Email verified status: ${user.emailVerified}');
 
-      // 3. KIỂM TRA EMAIL ĐÃ XÁC THỰC CHƯA
       if (!user.emailVerified) {
         print(
           '⚠️ Email not verified - keeping user signed in for verification check',
         );
-        // Trả về mã lỗi đặc biệt để LoginScreen hiện Dialog
         return 'EMAIL_NOT_VERIFIED';
       }
 
       print('✅ Email verified - Login successful');
-      return null; // Thành công hoàn toàn
+      return null;
     } on FirebaseAuthException catch (e) {
       print('❌ FirebaseAuthException: ${e.code} - ${e.message}');
       await _auth.signOut();
@@ -167,22 +185,19 @@ class AuthService {
           return 'Đăng nhập thất bại: ${e.message}';
       }
     } catch (e) {
-      // 🔧 XỬ LÝ DỰ PHÒNG: Nếu lỗi PigeonUserDetails làm văng khỏi khối try chính
       final errorString = e.toString();
       print('⚠️ Caught sign in error in main catch: $errorString');
 
       if (errorString.contains('PigeonUserDetails') ||
           errorString.contains('List<Object?>')) {
-        // Đợi một chút để Firebase kịp cập nhật trạng thái nội bộ
         await Future.delayed(const Duration(milliseconds: 500));
 
         final currentUser = _auth.currentUser;
         if (currentUser != null) {
-          // Kiểm tra email ngay cả khi reload bị lỗi
           if (!currentUser.emailVerified) {
             return 'EMAIL_NOT_VERIFIED';
           }
-          return null; // Đăng nhập thành công mặc dù có lỗi log
+          return null;
         }
       }
 
@@ -190,18 +205,17 @@ class AuthService {
       return 'Lỗi không xác định: $e';
     }
   }
+
   // Kiểm tra và reload trạng thái email verification
   Future<bool> checkEmailVerified() async {
     try {
       final user = _auth.currentUser;
       if (user == null) return false;
 
-      // 🔧 Bọc reload() trong try-catch riêng để tránh lỗi PigeonUserDetails
       try {
         await user.reload();
       } catch (e) {
         print('⚠️ Firebase reload bug (PigeonUserDetails) ignored: $e');
-        // Không return, cứ tiếp tục lấy currentUser bên dưới
       }
 
       final reloadedUser = _auth.currentUser;
@@ -212,7 +226,6 @@ class AuthService {
     } catch (e) {
       print('❌ Error checking email verification: $e');
 
-      // Nếu lỗi PigeonUserDetails, vẫn cố gắng check
       if (e.toString().contains('PigeonUserDetails') ||
           e.toString().contains('List<Object?>')) {
         final user = _auth.currentUser;
@@ -233,7 +246,7 @@ class AuthService {
   Future<String?> resetPassword(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
-      return null; // Success
+      return null;
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case 'user-not-found':
@@ -256,7 +269,6 @@ class AuthService {
         return 'Không tìm thấy người dùng. Vui lòng đăng nhập lại.';
       }
 
-      // Reload để lấy trạng thái mới nhất
       await user.reload();
       final currentUser = _auth.currentUser;
 
@@ -270,7 +282,7 @@ class AuthService {
 
       await currentUser.sendEmailVerification();
       print('✅ Resend verification email to ${currentUser.email}');
-      return null; // Success
+      return null;
     } on FirebaseAuthException catch (e) {
       print('❌ FirebaseAuthException: ${e.code}');
       switch (e.code) {
@@ -282,14 +294,73 @@ class AuthService {
     } catch (e) {
       print('❌ Error resending email: $e');
 
-      // Bỏ qua lỗi PigeonUserDetails
       if (e.toString().contains('PigeonUserDetails') ||
           e.toString().contains('List<Object?>')) {
         print('⚠️ PigeonUserDetails error but email likely sent');
-        return null; // Coi như thành công
+        return null;
       }
 
       return 'Lỗi không xác định: $e';
+    }
+  }
+
+  // 🆕 Cập nhật thông tin user profile
+  Future<String?> updateUserProfile({
+    required String uid,
+    String? name,
+    String? avatarUrl,
+  }) async {
+    try {
+      final Map<String, dynamic> updates = {};
+
+      if (name != null) {
+        updates['name'] = name;
+        try {
+          // Đây là dòng gây lỗi Pigeon trên Android
+          await _auth.currentUser?.updateDisplayName(name);
+        } catch (e) {
+          print('⚠️ Firebase updateDisplayName bug ignored: $e');
+          // Nếu là lỗi Pigeon, ta vẫn tiếp tục vì Firestore quan trọng hơn
+        }
+      }
+
+      if (avatarUrl != null) {
+        updates['avatarUrl'] = avatarUrl;
+      }
+
+      if (updates.isNotEmpty) {
+        await _firestore.collection('users').doc(uid).update(updates);
+
+        print('✅ User profile updated successfully in Firestore');
+      }
+
+      return null;
+    } catch (e) {
+      final errorString = e.toString();
+      // Kiểm tra nếu là lỗi Pigeon thì vẫn coi như thành công nếu Firestore đã xong
+      if (errorString.contains('Pigeon') ||
+          errorString.contains('List<Object?>')) {
+        print('⚠️ Ignored Pigeon error during profile update');
+        return null;
+      }
+
+      print('❌ Error updating user profile: $e');
+      return 'Lỗi cập nhật thông tin: $e';
+    }
+  }
+
+  // 🆕 Lấy thông tin user profile từ Firestore
+  Future<UserProfile?> getUserProfile(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+
+      if (doc.exists) {
+        return UserProfile.fromFirestore(doc);
+      }
+      return null;
+    } catch (e) {
+      print('❌ Error getting user profile: $e');
+      return null;
     }
   }
 }

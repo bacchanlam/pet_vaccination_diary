@@ -173,7 +173,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     );
 
                     if (signInError != null &&
-                        !signInError.contains('Email chưa được xác thực')) {
+                        signInError != 'EMAIL_NOT_VERIFIED') {
                       setState(() => _isLoading = false);
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

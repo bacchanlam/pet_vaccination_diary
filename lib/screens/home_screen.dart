@@ -9,6 +9,7 @@ import '../services/auth_service.dart';
 import 'add_pet_screen.dart';
 import 'pet_detail_screen.dart';
 import 'profile_screen.dart';
+import '../models/user.dart' as models;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -20,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String? _userName;
   int _selectedIndex = 0;
+  models.UserProfile? _userProfile;
 
   @override
   void initState() {
@@ -29,24 +31,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
-    
+
     if (user != null) {
       try {
-        final doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
-        if (mounted && doc.exists) {
+        // Load user profile từ Firestore
+        _userProfile = await AuthService().getUserProfile(user.uid);
+
+        if (mounted) {
           setState(() {
-            _userName = doc.data()?['name'];
+            _userName = _userProfile?.name;
           });
         }
       } catch (e) {
         print('Error loading user profile: $e');
       }
     }
-    
+
     if (mounted) {
       context.read<PetProvider>().loadPets();
       context.read<VaccinationProvider>().loadVaccinations();
@@ -58,16 +58,16 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_userName != null && _userName!.isNotEmpty) {
       return _userName!;
     }
-    
+
     if (user?.displayName != null && user!.displayName!.isNotEmpty) {
       return user.displayName!;
     }
-    
+
     if (user?.email != null) {
       // Lấy phần trước @ của email
       return user!.email!.split('@')[0];
     }
-    
+
     return 'Bạn';
   }
 
@@ -86,18 +86,15 @@ class _HomeScreenState extends State<HomeScreen> {
         child: _selectedIndex == 0
             ? _buildHomeContent()
             : _selectedIndex == 1
-                ? _buildPetsContent()
-                : _selectedIndex == 2
-                    ? _buildVaccinationsContent()
-                    : const ProfileScreen(), // Dùng ProfileScreen riêng
+            ? _buildPetsContent()
+            : _selectedIndex == 2
+            ? _buildVaccinationsContent()
+            : const ProfileScreen(), // Dùng ProfileScreen riêng
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10),
           ],
         ),
         child: BottomNavigationBar(
@@ -140,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHomeContent() {
     final user = FirebaseAuth.instance.currentUser;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,16 +154,32 @@ class _HomeScreenState extends State<HomeScreen> {
                       _selectedIndex = 3;
                     });
                   },
-                  child: CircleAvatar(
-                    radius: 25,
-                    backgroundColor: const Color(0xFFFF9966),
-                    child: Text(
-                      _getDisplayName(user).substring(0, 1).toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFFF9966),
+                        width: 2,
                       ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 25,
+                      backgroundColor: const Color(0xFFFF9966),
+                      backgroundImage: _userProfile?.avatarUrl != null
+                          ? NetworkImage(_userProfile!.avatarUrl!)
+                          : null,
+                      child: _userProfile?.avatarUrl == null
+                          ? Text(
+                              _getDisplayName(
+                                user,
+                              ).substring(0, 1).toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
+                            )
+                          : null,
                     ),
                   ),
                 ),
@@ -234,7 +247,8 @@ class _HomeScreenState extends State<HomeScreen> {
           // Vaccination Alert Card
           Consumer<VaccinationProvider>(
             builder: (context, vacProvider, _) {
-              final upcoming = vacProvider.getUpcomingVaccinations()
+              final upcoming = vacProvider
+                  .getUpcomingVaccinations()
                   .where((v) => v.isDueSoon())
                   .toList();
               final overdue = vacProvider.getOverdueVaccinations();
@@ -256,8 +270,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: (overdue.isNotEmpty ? Colors.red : const Color(0xFFFF9966))
-                            .withOpacity(0.3),
+                        color:
+                            (overdue.isNotEmpty
+                                    ? Colors.red
+                                    : const Color(0xFFFF9966))
+                                .withOpacity(0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -305,7 +322,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ],
                   ),
                 ),
@@ -408,10 +429,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: petProvider.pets.length > 3 ? 3 : petProvider.pets.length,
+                  itemCount: petProvider.pets.length > 3
+                      ? 3
+                      : petProvider.pets.length,
                   itemBuilder: (context, index) {
                     final pet = petProvider.pets[index];
-                    final vaccinations = vacProvider.getVaccinationsForPet(pet.id!);
+                    final vaccinations = vacProvider.getVaccinationsForPet(
+                      pet.id!,
+                    );
                     return _buildPetCard(pet, vaccinations.length);
                   },
                 ),
@@ -431,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -475,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPetCard(pet, int vaccinationCount) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       width: 160,
       margin: const EdgeInsets.only(right: 12),
@@ -494,9 +519,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => PetDetailScreen(pet: pet),
-            ),
+            MaterialPageRoute(builder: (context) => PetDetailScreen(pet: pet)),
           );
         },
         borderRadius: BorderRadius.circular(16),
@@ -508,11 +531,15 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 120,
               decoration: BoxDecoration(
                 color: Colors.grey[200],
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
               ),
               child: pet.imageUrl != null
                   ? ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
                       child: Image.network(
                         pet.imageUrl!,
                         width: double.infinity,
@@ -543,14 +570,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     '${pet.type} • ${pet.getAge()}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFF9966).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
@@ -603,7 +630,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPetsContent() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Consumer2<PetProvider, VaccinationProvider>(
       builder: (context, petProvider, vacProvider, _) {
         if (petProvider.isLoading) {
@@ -630,7 +657,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add_circle, color: Color(0xFFFF9966)),
+                    icon: const Icon(
+                      Icons.add_circle,
+                      color: Color(0xFFFF9966),
+                    ),
                     iconSize: 32,
                     onPressed: () {
                       Navigator.push(
@@ -650,8 +680,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemCount: petProvider.pets.length,
                 itemBuilder: (context, index) {
                   final pet = petProvider.pets[index];
-                  final vaccinations = vacProvider.getVaccinationsForPet(pet.id!);
-                  
+                  final vaccinations = vacProvider.getVaccinationsForPet(
+                    pet.id!,
+                  );
+
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
@@ -669,7 +701,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       contentPadding: const EdgeInsets.all(12),
                       leading: CircleAvatar(
                         radius: 30,
-                        backgroundColor: const Color(0xFFFF9966).withOpacity(0.1),
+                        backgroundColor: const Color(
+                          0xFFFF9966,
+                        ).withOpacity(0.1),
                         backgroundImage: pet.imageUrl != null
                             ? NetworkImage(pet.imageUrl!)
                             : null,
@@ -727,10 +761,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(fontSize: 18, color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Đang phát triển...',
-            style: TextStyle(color: Colors.grey[500]),
-          ),
+          Text('Đang phát triển...', style: TextStyle(color: Colors.grey[500])),
         ],
       ),
     );
