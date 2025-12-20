@@ -2,16 +2,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Pet {
   final String? id;
+  final String userId; // 🆕 Thêm userId
   final String name;
   final String type;
   final String breed;
-  final String gender; // Thêm giới tính
+  final String gender;
   final DateTime birthDate;
   final String? imageUrl;
   final DateTime createdAt;
 
   Pet({
     this.id,
+    required this.userId, // 🆕 Bắt buộc phải có userId
     required this.name,
     required this.type,
     required this.breed,
@@ -24,6 +26,7 @@ class Pet {
   // Convert Pet to Map for Firebase
   Map<String, dynamic> toMap() {
     return {
+      'userId': userId, // 🆕 Lưu userId vào Firestore
       'name': name,
       'type': type,
       'breed': breed,
@@ -39,6 +42,7 @@ class Pet {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Pet(
       id: doc.id,
+      userId: data['userId'] ?? '', // 🆕 Lấy userId từ Firestore
       name: data['name'] ?? '',
       type: data['type'] ?? '',
       breed: data['breed'] ?? '',

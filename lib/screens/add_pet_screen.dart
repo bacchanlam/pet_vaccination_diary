@@ -22,7 +22,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
   final _breedController = TextEditingController();
   final _cloudinaryService = CloudinaryService();
   final _imagePicker = ImagePicker();
-  
+
   String _selectedType = 'Chó';
   String _selectedGender = 'Đực';
   DateTime _birthDate = DateTime.now();
@@ -113,7 +113,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
     // Upload ảnh lên Cloudinary nếu có chọn ảnh mới
     if (_imageFile != null) {
       uploadedImageUrl = await _cloudinaryService.uploadImage(_imageFile!);
-      
+
       if (uploadedImageUrl == null) {
         setState(() {
           _isLoading = false;
@@ -130,7 +130,9 @@ class _AddPetScreenState extends State<AddPetScreen> {
       }
     }
 
+    // 🆕 userId sẽ được gán tự động trong PetProvider.addPet()
     final pet = Pet(
+      userId: '', // 🔥 Tạm để rỗng, sẽ được gán trong provider
       name: _nameController.text.trim(),
       type: _selectedType,
       breed: _breedController.text.trim(),
@@ -157,9 +159,11 @@ class _AddPetScreenState extends State<AddPetScreen> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.pet != null
-                ? 'Cập nhật thành công!'
-                : 'Thêm thú cưng thành công!'),
+            content: Text(
+              widget.pet != null
+                  ? 'Cập nhật thành công!'
+                  : 'Thêm thú cưng thành công!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -209,28 +213,31 @@ class _AddPetScreenState extends State<AddPetScreen> {
                           ),
                         )
                       : _imageUrl != null
-                          ? ClipOval(
-                              child: Image.network(
-                                _imageUrl!,
-                                width: 150,
-                                height: 150,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stack) =>
-                                    const Icon(Icons.pets, size: 60),
-                              ),
-                            )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_a_photo,
-                                    size: 40, color: Colors.grey[600]),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Thêm ảnh',
-                                  style: TextStyle(color: Colors.grey[600]),
-                                ),
-                              ],
+                      ? ClipOval(
+                          child: Image.network(
+                            _imageUrl!,
+                            width: 150,
+                            height: 150,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stack) =>
+                                const Icon(Icons.pets, size: 60),
+                          ),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_a_photo,
+                              size: 40,
+                              color: Colors.grey[600],
                             ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Thêm ảnh',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
                 ),
               ),
             ),
@@ -262,10 +269,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                 prefixIcon: Icon(Icons.category),
               ),
               items: _petTypes.map((type) {
-                return DropdownMenuItem(
-                  value: type,
-                  child: Text(type),
-                );
+                return DropdownMenuItem(value: type, child: Text(type));
               }).toList(),
               onChanged: (value) {
                 setState(() {
@@ -302,10 +306,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                 prefixIcon: Icon(Icons.male),
               ),
               items: _genders.map((gender) {
-                return DropdownMenuItem(
-                  value: gender,
-                  child: Text(gender),
-                );
+                return DropdownMenuItem(value: gender, child: Text(gender));
               }).toList(),
               onChanged: (value) {
                 setState(() {

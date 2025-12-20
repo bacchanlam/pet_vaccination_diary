@@ -1,0 +1,352 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../models/post.dart';
+import '../models/comment.dart';
+import '../providers/post_provider.dart';
+import '../services/auth_service.dart';
+
+class PostDetailScreen extends StatefulWidget {
+  final Post post;
+
+  const PostDetailScreen({Key? key, required this.post}) : super(key: key);
+
+  @override
+  State<PostDetailScreen> createState() => _PostDetailScreenState();
+}
+
+class _PostDetailScreenState extends State<PostDetailScreen> {
+  final _commentController = TextEditingController();
+  final _authService = AuthService();
+  List<Comment> _comments = [];
+  bool _isLoadingComments = true;
+  bool _isSendingComment = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadComments();
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadComments() async {
+    setState(() => _isLoadingComments = true);
+    _comments = await context.read<PostProvider>().getComments(widget.post.id!);
+    setState(() => _isLoadingComments = false);
+  }
+
+  Future<void> _sendComment() async {
+    if (_commentController.text.trim().isEmpty) return;
+
+    setState(() => _isSendingComment = true);
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final userProfile = await _authService.getUserProfile(user.uid);
+
+    final success = await context.read<PostProvider>().addComment(
+          postId: widget.post.id!,
+          content: _commentController.text.trim(),
+          userName: userProfile?.name ?? user.displayName ?? 'Unknown',
+          userAvatar: userProfile?.avatarUrl,
+        );
+
+    setState(() => _isSendingComment = false);
+
+    if (success) {
+      _commentController.clear();
+      _loadComments();
+    }
+  }
+
+  String _getTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays} ngày trước';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} giờ trước';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} phút trước';
+    } else {
+      return 'Vừa xong';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('${widget.post.userName}'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Post content
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // User info
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: const Color(0xFFFF9966),
+                              backgroundImage: widget.post.userAvatar != null
+                                  ? NetworkImage(widget.post.userAvatar!)
+                                  : null,
+                              child: widget.post.userAvatar == null
+                                  ? Text(
+                                      widget.post.userName
+                                          .substring(0, 1)
+                                          .toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.post.userName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                Text(
+                                  _getTimeAgo(widget.post.createdAt),
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Content
+                        if (widget.post.content.isNotEmpty)
+                          Text(
+                            widget.post.content,
+                            style: const TextStyle(fontSize: 15, height: 1.4),
+                          ),
+                        const SizedBox(height: 12),
+
+                        // Image
+                        if (widget.post.imageUrl != null)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              widget.post.imageUrl!,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+
+                        const SizedBox(height: 12),
+
+                        // Stats
+                        Row(
+                          children: [
+                            Icon(Icons.favorite, size: 16, color: Colors.red),
+                            const SizedBox(width: 4),
+                            Text('${widget.post.likeCount}'),
+                            const SizedBox(width: 16),
+                            Icon(Icons.comment, size: 16, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text('${widget.post.commentCount}'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Comments section
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Bình luận (${_comments.length})',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        if (_isLoadingComments)
+                          const Center(child: CircularProgressIndicator())
+                        else if (_comments.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: Text(
+                                'Chưa có bình luận nào',
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                            ),
+                          )
+                        else
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _comments.length,
+                            itemBuilder: (context, index) {
+                              final comment = _comments[index];
+                              return _buildCommentItem(comment);
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Comment input
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _commentController,
+                    decoration: InputDecoration(
+                      hintText: 'Viết bình luận...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _isSendingComment
+                    ? const CircularProgressIndicator()
+                    : IconButton(
+                        icon: const Icon(
+                          Icons.send,
+                          color: Color(0xFFFF9966),
+                        ),
+                        onPressed: _sendComment,
+                      ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentItem(Comment comment) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: const Color(0xFFFF9966),
+            backgroundImage:
+                comment.userAvatar != null ? NetworkImage(comment.userAvatar!) : null,
+            child: comment.userAvatar == null
+                ? Text(
+                    comment.userName.substring(0, 1).toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        comment.userName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        comment.content,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _getTimeAgo(comment.createdAt),
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
