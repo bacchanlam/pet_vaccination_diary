@@ -28,12 +28,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Trong file login_screen.dart, cập nhật hàm _login:
 
+  // Tìm đến hàm _login và thay thế:
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final error = await _authService.signIn(
@@ -41,27 +40,24 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
 
+      // Nếu màn hình đã bị gỡ bỏ (do AuthWrapper chuyển trang), dừng ngay lập tức
       if (!mounted) return;
-
-      setState(() {
-        _isLoading = false; // Đảm bảo luôn tắt loading sau khi nhận kết quả
-      });
 
       if (error == null) {
         print('✅ Login successful');
-      } else if (error == 'EMAIL_NOT_VERIFIED') {
-        _showEmailVerificationDialog(); // Hiển thị dialog thông báo ngay lập tức
+        // Không gọi setState ở đây nữa vì AuthWrapper sẽ tự đổi sang Home
       } else {
-        // Hiển thị các lỗi khác
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: Colors.red),
-        );
+        setState(() => _isLoading = false);
+        if (error == 'EMAIL_NOT_VERIFIED') {
+          _showEmailVerificationDialog();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error), backgroundColor: Colors.red),
+          );
+        }
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        print('❌ Fatal error: $e');
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

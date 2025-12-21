@@ -8,6 +8,7 @@ import 'screens/home_screen.dart';
 import 'providers/pet_provider.dart';
 import 'providers/vaccination_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/post_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => PetProvider()),
         ChangeNotifierProvider(create: (_) => VaccinationProvider()),
+        ChangeNotifierProvider(create: (_) => PostProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
