@@ -5,6 +5,7 @@ import '../models/post.dart';
 import '../models/comment.dart';
 import '../providers/post_provider.dart';
 import '../services/auth_service.dart';
+import '../providers/notification_provider.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Post post;
@@ -51,11 +52,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final userProfile = await _authService.getUserProfile(user.uid);
 
     final success = await context.read<PostProvider>().addComment(
-          postId: widget.post.id!,
-          content: _commentController.text.trim(),
-          userName: userProfile?.name ?? user.displayName ?? 'Unknown',
-          userAvatar: userProfile?.avatarUrl,
-        );
+      postId: widget.post.id!,
+      content: _commentController.text.trim(),
+      userName: userProfile?.name ?? user.displayName ?? 'Unknown',
+      userAvatar: userProfile?.avatarUrl,
+      notificationProvider: context.read<NotificationProvider>(), // 🆕 THÊM
+    );
 
     setState(() => _isSendingComment = false);
 
@@ -85,9 +87,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.post.userName}'),
-      ),
+      appBar: AppBar(title: Text('${widget.post.userName}')),
       body: Column(
         children: [
           Expanded(
@@ -269,10 +269,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 _isSendingComment
                     ? const CircularProgressIndicator()
                     : IconButton(
-                        icon: const Icon(
-                          Icons.send,
-                          color: Color(0xFFFF9966),
-                        ),
+                        icon: const Icon(Icons.send, color: Color(0xFFFF9966)),
                         onPressed: _sendComment,
                       ),
               ],
@@ -283,7 +280,78 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
+  // Show delete comment confirmation dialog
+  Future<void> _showDeleteCommentDialog(Comment comment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_outline, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Xóa bình luận'),
+          ],
+        ),
+        content: const Text('Bạn có chắc muốn xóa bình luận này?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Xóa', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await _deleteComment(comment);
+    }
+  }
+
+  // Delete comment
+  Future<void> _deleteComment(Comment comment) async {
+    final success = await context.read<PostProvider>().deleteComment(
+      comment.id!,
+      comment.userId,
+    );
+
+    if (success && mounted) {
+      // Reload comments
+      _loadComments();
+      await context.read<PostProvider>().loadPosts();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã xóa bình luận'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không thể xóa bình luận'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   Widget _buildCommentItem(Comment comment) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final isMyComment = currentUser?.uid == comment.userId;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -292,8 +360,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           CircleAvatar(
             radius: 16,
             backgroundColor: const Color(0xFFFF9966),
-            backgroundImage:
-                comment.userAvatar != null ? NetworkImage(comment.userAvatar!) : null,
+            backgroundImage: comment.userAvatar != null
+                ? NetworkImage(comment.userAvatar!)
+                : null,
             child: comment.userAvatar == null
                 ? Text(
                     comment.userName.substring(0, 1).toUpperCase(),
@@ -319,12 +388,30 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        comment.userName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            comment.userName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          // Nút xóa nếu là comment của mình
+                          if (isMyComment)
+                            InkWell(
+                              onTap: () => _showDeleteCommentDialog(comment),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Icon(
+                                  Icons.delete_outline,
+                                  size: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -337,10 +424,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 const SizedBox(height: 4),
                 Text(
                   _getTimeAgo(comment.createdAt),
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 11),
                 ),
               ],
             ),

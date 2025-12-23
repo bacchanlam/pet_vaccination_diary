@@ -1,31 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/vaccination.dart';
 
 class VaccinationProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   List<Vaccination> _vaccinations = [];
   bool _isLoading = false;
 
   List<Vaccination> get vaccinations => _vaccinations;
   bool get isLoading => _isLoading;
 
-  // Load all vaccinations
+  // 🔥 SỬA: Load vaccinations CHỈ của pets thuộc user hiện tại
   Future<void> loadVaccinations() async {
+    final user = _auth.currentUser;
+    
+    if (user == null) {
+      print('❌ No user logged in');
+      _vaccinations = [];
+      notifyListeners();
+      return;
+    }
+
     _isLoading = true;
     notifyListeners();
 
     try {
-      final snapshot = await _firestore
-          .collection('vaccinations')
-          .orderBy('vaccinationDate', descending: true)
+      // Bước 1: Lấy tất cả petIds của user
+      final petsSnapshot = await _firestore
+          .collection('pets')
+          .where('userId', isEqualTo: user.uid)
           .get();
 
-      _vaccinations = snapshot.docs
-          .map((doc) => Vaccination.fromFirestore(doc))
-          .toList();
+      final petIds = petsSnapshot.docs.map((doc) => doc.id).toList();
+
+      print('🔍 User ${user.uid} has ${petIds.length} pets');
+
+      if (petIds.isEmpty) {
+        _vaccinations = [];
+        print('📋 No pets found for this user');
+      } else {
+        // Bước 2: Lấy vaccinations của các pets này
+        final vaccinationsSnapshot = await _firestore
+            .collection('vaccinations')
+            .where('petId', whereIn: petIds)
+            .get();
+
+        _vaccinations = vaccinationsSnapshot.docs
+            .map((doc) => Vaccination.fromFirestore(doc))
+            .toList()
+          ..sort((a, b) => b.vaccinationDate.compareTo(a.vaccinationDate));
+
+        print('✅ Loaded ${_vaccinations.length} vaccinations for user ${user.uid}');
+      }
     } catch (e) {
-      print('Error loading vaccinations: $e');
+      print('❌ Error loading vaccinations: $e');
+      _vaccinations = [];
     }
 
     _isLoading = false;
