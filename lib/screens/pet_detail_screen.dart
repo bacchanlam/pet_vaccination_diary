@@ -101,7 +101,7 @@ class PetDetailScreen extends StatelessWidget {
                   ),
                   // Pet Name
                   Positioned(
-                    bottom: 60,
+                    bottom: 20,
                     left: 20,
                     right: 20,
                     child: Column(

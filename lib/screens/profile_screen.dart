@@ -71,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // Profile Header with gradient
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
+                    padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         colors: [Color(0xFFFF9966), Color(0xFFFF8C5A)],
