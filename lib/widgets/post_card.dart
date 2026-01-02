@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import '../models/post.dart';
 import '../providers/post_provider.dart';
 import '../screens/post_detail_screen.dart';
+import '../providers/notification_provider.dart';
+import '../services/auth_service.dart';
+import '../models/user.dart' as models;
 
 class PostCard extends StatelessWidget {
   final Post post;
@@ -40,9 +43,10 @@ class PostCard extends StatelessWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              final success = await context
-                  .read<PostProvider>()
-                  .deletePost(post.id!, post.userId);
+              final success = await context.read<PostProvider>().deletePost(
+                post.id!,
+                post.userId,
+              );
               if (success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -117,10 +121,7 @@ class PostCard extends StatelessWidget {
                       ),
                       Text(
                         _getTimeAgo(post.createdAt),
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
                       ),
                     ],
                   ),
@@ -199,28 +200,43 @@ class PostCard extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: TextButton.icon(
-                    onPressed: () {
-                      context.read<PostProvider>().toggleLike(post.id!);
+                  child: Consumer<NotificationProvider>(
+                    builder: (context, notificationProvider, _) {
+                      return TextButton.icon(
+                        onPressed: () async {
+                          // Get user info
+                          final userProfile = await AuthService()
+                              .getUserProfile(currentUser?.uid ?? '');
+
+                          context.read<PostProvider>().toggleLike(
+                            post.id!,
+                            notificationProvider,
+                            userProfile?.name ??
+                                currentUser?.displayName ??
+                                'Unknown',
+                            userProfile?.avatarUrl,
+                          );
+                        },
+                        icon: Icon(
+                          post.isLikedBy(currentUser?.uid ?? '')
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: post.isLikedBy(currentUser?.uid ?? '')
+                              ? Colors.red
+                              : Colors.grey[600],
+                          size: 20,
+                        ),
+                        label: Text(
+                          'Thích',
+                          style: TextStyle(
+                            color: post.isLikedBy(currentUser?.uid ?? '')
+                                ? Colors.red
+                                : Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      );
                     },
-                    icon: Icon(
-                      post.isLikedBy(currentUser?.uid ?? '')
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      color: post.isLikedBy(currentUser?.uid ?? '')
-                          ? Colors.red
-                          : Colors.grey[600],
-                      size: 20,
-                    ),
-                    label: Text(
-                      'Thích',
-                      style: TextStyle(
-                        color: post.isLikedBy(currentUser?.uid ?? '')
-                            ? Colors.red
-                            : Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
                   ),
                 ),
                 Expanded(
@@ -233,8 +249,11 @@ class PostCard extends StatelessWidget {
                         ),
                       );
                     },
-                    icon: Icon(Icons.comment_outlined,
-                        color: Colors.grey[600], size: 20),
+                    icon: Icon(
+                      Icons.comment_outlined,
+                      color: Colors.grey[600],
+                      size: 20,
+                    ),
                     label: Text(
                       'Bình luận',
                       style: TextStyle(color: Colors.grey[600], fontSize: 14),

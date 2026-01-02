@@ -4,11 +4,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../providers/pet_provider.dart';
 import '../providers/vaccination_provider.dart';
 import '../providers/post_provider.dart';
+import '../providers/notification_provider.dart';
 import '../services/auth_service.dart';
 import 'profile_screen.dart';
 import 'create_post_screen.dart';
 import 'pets_list_screen.dart';
 import 'vaccinations_list_screen.dart';
+import 'user_profile_screen.dart';
+import 'notifications_screen.dart';
 import '../widgets/post_card.dart';
 import '../models/user.dart' as models;
 
@@ -23,20 +26,11 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _userName;
   int _selectedIndex = 0;
   models.UserProfile? _userProfile;
-  final _searchController = TextEditingController();
-  List<Map<String, dynamic>> _searchResults = [];
-  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -60,49 +54,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context.read<PetProvider>().loadPets();
       context.read<VaccinationProvider>().loadVaccinations();
       context.read<PostProvider>().loadPosts();
+      context.read<NotificationProvider>().loadNotifications();
     }
-  }
-
-  Future<void> _searchUsers(String query) async {
-    if (query.isEmpty) {
-      setState(() {
-        _searchResults = [];
-        _isSearching = false;
-      });
-      return;
-    }
-
-    setState(() => _isSearching = true);
-
-    final results = await context.read<PostProvider>().searchUsers(query);
-
-    setState(() {
-      _searchResults = results;
-      _isSearching = false;
-    });
-  }
-
-  String _getDisplayName(User? user) {
-    if (_userName != null && _userName!.isNotEmpty) {
-      return _userName!;
-    }
-
-    if (user?.displayName != null && user!.displayName!.isNotEmpty) {
-      return user.displayName!;
-    }
-
-    if (user?.email != null) {
-      return user!.email!.split('@')[0];
-    }
-
-    return 'Bạn';
-  }
-
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Chào buổi sáng!';
-    if (hour < 18) return 'Chào buổi chiều!';
-    return 'Chào buổi tối!';
   }
 
   @override
@@ -113,10 +66,10 @@ class _HomeScreenState extends State<HomeScreen> {
         child: IndexedStack(
           index: _selectedIndex,
           children: const [
-            _HomeContentWidget(), // News Feed
-            PetsListScreen(), // Trang Thú cưng
-            VaccinationsListScreen(), // Trang Lịch tiêm
-            ProfileScreen(), // Trang Tài khoản
+            _HomeContentWidget(),
+            PetsListScreen(),
+            VaccinationsListScreen(),
+            ProfileScreen(),
           ],
         ),
       ),
@@ -160,22 +113,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: _selectedIndex == 0
-          ? FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CreatePostScreen(),
-                  ),
-                ).then((_) {
-                  context.read<PostProvider>().loadPosts();
-                });
-              },
-              backgroundColor: const Color(0xFFFF9966),
-              child: const Icon(Icons.add, color: Colors.white),
-            )
-          : null,
     );
   }
 }
@@ -192,6 +129,7 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
   final _searchController = TextEditingController();
   List<Map<String, dynamic>> _searchResults = [];
   bool _isSearching = false;
+  bool _showSearchBar = false;
   models.UserProfile? _userProfile;
   String? _userName;
 
@@ -275,7 +213,7 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
           // Header
           SliverToBoxAdapter(
             child: Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
               child: Row(
                 children: [
                   Container(
@@ -287,7 +225,7 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
                       ),
                     ),
                     child: CircleAvatar(
-                      radius: 25,
+                      radius: 22,
                       backgroundColor: const Color(0xFFFF9966),
                       backgroundImage: _userProfile?.avatarUrl != null
                           ? NetworkImage(_userProfile!.avatarUrl!)
@@ -300,7 +238,7 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 20,
+                                fontSize: 18,
                               ),
                             )
                           : null,
@@ -317,23 +255,82 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           _getGreeting(),
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             color: Colors.grey[600],
                           ),
                         ),
                       ],
                     ),
                   ),
+                  // Search Icon
                   IconButton(
-                    icon: const Icon(Icons.notifications_outlined),
+                    icon: Icon(
+                      _showSearchBar ? Icons.close : Icons.search,
+                      color: const Color(0xFFFF9966),
+                      size: 26,
+                    ),
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Tính năng đang phát triển')),
+                      setState(() {
+                        _showSearchBar = !_showSearchBar;
+                        if (!_showSearchBar) {
+                          _searchController.clear();
+                          _searchResults = [];
+                        }
+                      });
+                    },
+                  ),
+                  // Notification Icon with Badge
+                  Consumer<NotificationProvider>(
+                    builder: (context, notificationProvider, _) {
+                      return Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.notifications_outlined,
+                                size: 26),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const NotificationsScreen(),
+                                ),
+                              ).then((_) {
+                                notificationProvider.loadNotifications();
+                              });
+                            },
+                          ),
+                          if (notificationProvider.unreadCount > 0)
+                            Positioned(
+                              right: 8,
+                              top: 8,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 18,
+                                  minHeight: 18,
+                                ),
+                                child: Text(
+                                  '${notificationProvider.unreadCount > 9 ? '9+' : notificationProvider.unreadCount}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
                       );
                     },
                   ),
@@ -342,113 +339,174 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
             ),
           ),
 
-          // Search bar
+          // Search Bar (when expanded)
+          if (_showSearchBar)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _searchController,
+                      onChanged: _searchUsers,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: 'Tìm kiếm người dùng...',
+                        hintStyle: TextStyle(color: Colors.grey[500]),
+                        prefixIcon: const Icon(Icons.search,
+                            color: Color(0xFFFF9966)),
+                        filled: true,
+                        fillColor: isDark
+                            ? const Color(0xFF1E1E1E)
+                            : Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 0),
+                      ),
+                      style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black),
+                    ),
+
+                    // Search results
+                    if (_searchController.text.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        constraints: const BoxConstraints(maxHeight: 250),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E1E1E)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: _isSearching
+                            ? const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              )
+                            : _searchResults.isEmpty
+                                ? Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Text(
+                                      'Không tìm thấy người dùng',
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    shrinkWrap: true,
+                                    itemCount: _searchResults.length,
+                                    itemBuilder: (context, index) {
+                                      final searchUser = _searchResults[index];
+                                      return ListTile(
+                                        leading: CircleAvatar(
+                                          backgroundColor:
+                                              const Color(0xFFFF9966),
+                                          backgroundImage:
+                                              searchUser['avatarUrl'] != null
+                                                  ? NetworkImage(
+                                                      searchUser['avatarUrl'])
+                                                  : null,
+                                          child: searchUser['avatarUrl'] == null
+                                              ? Text(
+                                                  searchUser['name']
+                                                      .toString()
+                                                      .substring(0, 1)
+                                                      .toUpperCase(),
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                )
+                                              : null,
+                                        ),
+                                        title: Text(searchUser['name']),
+                                        subtitle: Text(searchUser['email']),
+                                        onTap: () {
+                                          _searchController.clear();
+                                          setState(() {
+                                            _searchResults = [];
+                                            _showSearchBar = false;
+                                          });
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  UserProfileScreen(
+                                                userId: searchUser['uid'],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+
+          SliverToBoxAdapter(child: SizedBox(height: _showSearchBar ? 16 : 20)),
+
+          // "Bạn đang nghĩ gì?" Box (không có avatar)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _searchController,
-                    onChanged: _searchUsers,
-                    decoration: InputDecoration(
-                      hintText: 'Tìm kiếm người dùng...',
-                      hintStyle: TextStyle(color: Colors.grey[500]),
-                      prefixIcon:
-                          const Icon(Icons.search, color: Color(0xFFFF9966)),
-                      filled: true,
-                      fillColor:
-                          isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+              child: Material(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                elevation: 2,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreatePostScreen(),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                    ),
-                    style:
-                        TextStyle(color: isDark ? Colors.white : Colors.black),
-                  ),
-
-                  // Search results
-                  if (_searchController.text.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
+                    ).then((_) {
+                      context.read<PostProvider>().loadPosts();
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Bạn đang nghĩ gì?',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.grey[600],
+                            ),
                           ),
-                        ],
-                      ),
-                      child: _isSearching
-                          ? const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16),
-                                child: CircularProgressIndicator(),
-                              ),
-                            )
-                          : _searchResults.isEmpty
-                              ? Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Text(
-                                    'Không tìm thấy người dùng',
-                                    style: TextStyle(color: Colors.grey[600]),
-                                  ),
-                                )
-                              : ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: _searchResults.length,
-                                  itemBuilder: (context, index) {
-                                    final searchUser = _searchResults[index];
-                                    return ListTile(
-                                      leading: CircleAvatar(
-                                        backgroundColor:
-                                            const Color(0xFFFF9966),
-                                        backgroundImage:
-                                            searchUser['avatarUrl'] != null
-                                                ? NetworkImage(
-                                                    searchUser['avatarUrl'])
-                                                : null,
-                                        child: searchUser['avatarUrl'] == null
-                                            ? Text(
-                                                searchUser['name']
-                                                    .toString()
-                                                    .substring(0, 1)
-                                                    .toUpperCase(),
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              )
-                                            : null,
-                                      ),
-                                      title: Text(searchUser['name']),
-                                      subtitle: Text(searchUser['email']),
-                                      onTap: () {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                                'Xem hồ sơ ${searchUser['name']}'),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
+                        ),
+                        Icon(
+                          Icons.image_outlined,
+                          color: Colors.grey[600],
+                          size: 24,
+                        ),
+                      ],
                     ),
-                  ],
-                ],
+                  ),
+                ),
               ),
             ),
           ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
           // Posts Feed
           Consumer<PostProvider>(

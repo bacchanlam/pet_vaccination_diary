@@ -233,12 +233,12 @@ class PetsListScreen extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -253,129 +253,240 @@ class PetsListScreen extends StatelessWidget {
               ),
             );
           },
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Pet Image
+              // Pet Image với Badge
               Expanded(
-                flex: 3,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
-                    ),
-                  ),
-                  child: pet.imageUrl != null
-                      ? ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(16),
-                          ),
-                          child: Image.network(
-                            pet.imageUrl!,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stack) =>
-                                const Center(
-                              child: Icon(Icons.pets, size: 40),
-                            ),
-                          ),
-                        )
-                      : Center(
-                          child: Icon(
-                            Icons.pets,
-                            size: 50,
-                            color: Colors.grey[400],
-                          ),
+                flex: 4,
+                child: Stack(
+                  children: [
+                    // Image
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(20),
                         ),
-                ),
-              ),
-
-              // Pet Info
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        pet.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            pet.type == 'Chó'
-                                ? Icons.pets
-                                : pet.type == 'Mèo'
-                                    ? Icons.pets
-                                    : Icons.cruelty_free,
-                            size: 14,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              '${pet.type} • ${pet.gender}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
+                      child: pet.imageUrl != null
+                          ? ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(20),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              child: Image.network(
+                                pet.imageUrl!,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stack) =>
+                                    Center(
+                                  child: Icon(
+                                    Icons.pets,
+                                    size: 50,
+                                    color: Colors.grey[400],
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Center(
+                              child: Icon(
+                                Icons.pets,
+                                size: 50,
+                                color: Colors.grey[400],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        pet.getAge(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
+                    ),
+                    
+                    // Vaccination Badge - TOP RIGHT
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF9966).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF9966), Color(0xFFFF8C5A)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF9966).withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(
                               Icons.vaccines,
-                              size: 12,
-                              color: Color(0xFFFF9966),
+                              size: 14,
+                              color: Colors.white,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '$vaccinationCount lần',
+                              '$vaccinationCount',
                               style: const TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFFFF9966),
-                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                    // Gradient Overlay ở dưới
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: 60,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.7),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Pet Name ở bottom
+                    Positioned(
+                      bottom: 8,
+                      left: 12,
+                      right: 12,
+                      child: Text(
+                        pet.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.white,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black,
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Pet Info
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Type & Gender
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF9966).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                pet.type == 'Chó'
+                                    ? Icons.pets
+                                    : pet.type == 'Mèo'
+                                        ? Icons.pets
+                                        : Icons.cruelty_free,
+                                size: 14,
+                                color: const Color(0xFFFF9966),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                pet.type,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFFFF9966),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                pet.gender == 'Đực'
+                                    ? Icons.male
+                                    : Icons.female,
+                                size: 14,
+                                color: Colors.blue,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                pet.gender,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Age
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.cake_outlined,
+                          size: 14,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          pet.getAge(),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
