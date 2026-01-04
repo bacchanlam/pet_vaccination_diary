@@ -1,3 +1,4 @@
+import 'dart:async'; // 🆕 Import Timer
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -56,24 +57,68 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _showSplash = true;
+  Timer? _dailyCheckTimer; // 🆕 Timer để check vaccination reminders
 
   @override
   void initState() {
     super.initState();
     _initSplash();
+    _startDailyVaccinationCheck(); // 🆕 Start daily check
+  }
+
+  @override
+  void dispose() {
+    _dailyCheckTimer?.cancel(); // 🆕 Cancel timer khi dispose
+    super.dispose();
   }
 
   Future<void> _initSplash() async {
-    // Đợi Firebase Auth init xong
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    // Hiển thị splash 2.5 giây nữa (tổng 3 giây)
-    await Future.delayed(const Duration(milliseconds: 2500));
-    
+    await Future.delayed(const Duration(milliseconds: 3000));
     if (mounted) {
       setState(() {
         _showSplash = false;
       });
+    }
+  }
+
+  // 🆕 Bắt đầu check vaccination reminders định kỳ
+  void _startDailyVaccinationCheck() {
+    // Đợi 5 giây sau khi app start để check lần đầu
+    // (cho phép user login và providers được init)
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        _checkVaccinationReminders();
+      }
+    });
+
+    // Schedule check mỗi 24 giờ
+    _dailyCheckTimer = Timer.periodic(
+      const Duration(hours: 24),
+      (timer) {
+        if (mounted) {
+          _checkVaccinationReminders();
+        }
+      },
+    );
+  }
+
+  // 🆕 Check vaccination reminders
+  Future<void> _checkVaccinationReminders() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      
+      // Chỉ check nếu user đã đăng nhập và email đã verify
+      if (user != null && user.emailVerified) {
+        print('🔔 Checking vaccination reminders...');
+        
+        if (mounted) {
+          await context.read<NotificationProvider>().checkVaccinationReminders();
+        }
+        
+        print('✅ Vaccination reminders checked');
+      }
+    } catch (e) {
+      print('❌ Error in daily vaccination check: $e');
     }
   }
 

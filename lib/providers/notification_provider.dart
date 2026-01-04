@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/notification.dart';
+import '../services/vaccination_notification_service.dart';
 
 class NotificationProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -48,6 +49,25 @@ class NotificationProvider extends ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+  }
+  Future<void> checkVaccinationReminders() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final service = VaccinationNotificationService();
+      
+      // Cleanup expired reminders
+      await service.cleanupExpiredVaccinationReminders();
+      
+      // Create new reminders
+      await service.checkAndCreateVaccinationReminders();
+      
+      // Reload notifications
+      await loadNotifications();
+    } catch (e) {
+      print('❌ Error checking vaccination reminders: $e');
+    }
   }
 
   // Create notification when someone likes a post
