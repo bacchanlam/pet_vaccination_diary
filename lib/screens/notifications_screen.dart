@@ -4,10 +4,8 @@ import '../models/notification.dart';
 import '../providers/notification_provider.dart';
 import '../providers/post_provider.dart';
 import 'post_detail_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/vaccination.dart';
-import '../models/pet.dart';
-import '../screens/pet_detail_screen.dart';
+import 'home_screen.dart'; // 🔥 NEW: Import HomeScreen
+
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({Key? key}) : super(key: key);
 
@@ -49,78 +47,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       await context.read<NotificationProvider>().markAsRead(notification.id!);
     }
 
-    // 🆕 Handle vaccine reminder
+    // 🔥 FIXED: Handle vaccine reminder - navigate to VaccinationsListScreen
     if (notification.type == 'vaccine_reminder') {
-      if (notification.vaccinationId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Không tìm thấy thông tin lịch tiêm'),
-            backgroundColor: Colors.orange,
+      if (mounted) {
+        // Pop back to home and navigate to vaccination tab
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        
+        // Navigate to HomeScreen with vaccination tab (index 2)
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(initialIndex: 2), // Tab 2 = Lịch tiêm
           ),
         );
-        return;
-      }
-
-      // Lấy vaccination từ Firestore
-      try {
-        final vacDoc = await FirebaseFirestore.instance
-            .collection('vaccinations')
-            .doc(notification.vaccinationId)
-            .get();
-
-        if (!vacDoc.exists) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Lịch tiêm không tồn tại hoặc đã bị xóa'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
-          return;
-        }
-
-        final vaccination = Vaccination.fromFirestore(vacDoc);
-
-        // Lấy pet info
-        final petDoc = await FirebaseFirestore.instance
-            .collection('pets')
-            .doc(vaccination.petId)
-            .get();
-
-        if (!petDoc.exists) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Thú cưng không tồn tại'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
-          return;
-        }
-
-        final pet = Pet.fromFirestore(petDoc);
-
-        // Navigate to PetDetailScreen
-        if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PetDetailScreen(pet: pet),
-            ),
-          );
-        }
-      } catch (e) {
-        print('❌ Error loading vaccination: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
       }
       return;
     }
@@ -147,7 +85,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       }
     }
   }
-  // 🆕 Show delete all confirmation dialog
+
   Future<void> _showDeleteAllDialog() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -190,7 +128,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  // 🆕 Delete all notifications
   Future<void> _deleteAllNotifications() async {
     final provider = context.read<NotificationProvider>();
     final notifications = List.from(provider.notifications);
@@ -209,7 +146,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  // 🆕 Show delete single notification confirmation
   Future<void> _showDeleteDialog(AppNotification notification) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -258,7 +194,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(
         title: const Text('Thông báo'),
         actions: [
-          // Menu button with options
           Consumer<NotificationProvider>(
             builder: (context, provider, _) {
               if (provider.notifications.isEmpty) {
@@ -331,7 +266,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Thông báo sẽ xuất hiện khi có người\nthích hoặc bình luận bài viết của bạn',
+                    'Thông báo sẽ xuất hiện khi có người\nthích hoặc bình luận bài viết của bạn\nhoặc khi có lịch tiêm sắp đến hạn',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                   ),
@@ -429,46 +364,49 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: const Color(0xFFFF9966),
-                backgroundImage: notification.fromUserAvatar != null ? NetworkImage(notification.fromUserAvatar!) : null,
-                child: notification.fromUserAvatar == null
-                    ? Text(
-                        notification.fromUserName.substring(0, 1).toUpperCase(),
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      )
+                backgroundColor: notification.getIconColor(),
+                // 🔥 FIXED: For vaccine reminders, show vaccine icon instead of user avatar
+                child: notification.type == 'vaccine_reminder'
+                    ? Icon(notification.getIcon(), color: Colors.white, size: 28)
+                    : (notification.fromUserAvatar != null 
+                        ? null 
+                        : Text(
+                            notification.fromUserName.substring(0, 1).toUpperCase(),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          )),
+                backgroundImage: notification.type != 'vaccine_reminder' && notification.fromUserAvatar != null 
+                    ? NetworkImage(notification.fromUserAvatar!) 
                     : null,
               ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: notification.getIconColor(),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : Colors.white, width: 2),
+              if (notification.type != 'vaccine_reminder')
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: notification.getIconColor(),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : Colors.white, width: 2),
+                    ),
+                    child: Icon(notification.getIcon(), size: 12, color: Colors.white),
                   ),
-                  child: Icon(notification.getIcon(), size: 12, color: Colors.white),
                 ),
-              ),
             ],
           ),
-          title: RichText(
-            text: TextSpan(
-              style: TextStyle(fontSize: 15, color: isDark ? Colors.white : Colors.black),
-              children: [
-                TextSpan(text: notification.fromUserName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                TextSpan(
-                  text: notification.type == 'like'
-                      ? ' đã thích bài viết của bạn'
-                      : ' đã bình luận bài viết của bạn',
-                ),
-              ],
+          title: Text(
+            // 🔥 FIXED: Use the proper message from notification model
+            notification.getMessage(),
+            style: TextStyle(
+              fontSize: 15, 
+              color: isDark ? Colors.white : Colors.black,
+              fontWeight: notification.isRead ? FontWeight.normal : FontWeight.w600,
             ),
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 🔥 REMOVED: Comment content section (only for comment notifications)
               if (notification.type == 'comment' && notification.commentContent != null) ...[
                 const SizedBox(height: 4),
                 Container(

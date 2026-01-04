@@ -15,8 +15,14 @@ import 'notifications_screen.dart';
 import '../widgets/post_card.dart';
 import '../models/user.dart' as models;
 
+// 🔥 NEW: Global key để access HomeScreen state từ bên ngoài
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<_HomeScreenState> homeScreenKey = GlobalKey<_HomeScreenState>();
+
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  final int initialIndex; // 🔥 NEW: Accept initial tab index
+  
+  const HomeScreen({Key? key, this.initialIndex = 0}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -24,13 +30,23 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String? _userName;
-  int _selectedIndex = 0;
+  late int _selectedIndex;
   models.UserProfile? _userProfile;
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex; // 🔥 Use initial index
     _loadUserData();
+  }
+
+  // 🔥 NEW: Method to change tab from outside
+  void changeTab(int index) {
+    if (mounted) {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -118,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Widget riêng cho News Feed
+// Widget riêng cho News Feed (giữ nguyên như cũ)
 class _HomeContentWidget extends StatefulWidget {
   const _HomeContentWidget({Key? key}) : super(key: key);
 
@@ -461,7 +477,7 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
 
           SliverToBoxAdapter(child: SizedBox(height: _showSearchBar ? 16 : 20)),
 
-          // "Bạn đang nghĩ gì?" Box (không có avatar)
+          // "Bạn đang nghĩ gì?" Box
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
