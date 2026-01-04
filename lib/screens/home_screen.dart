@@ -20,9 +20,14 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<_HomeScreenState> homeScreenKey = GlobalKey<_HomeScreenState>();
 
 class HomeScreen extends StatefulWidget {
-  final int initialIndex; // 🔥 NEW: Accept initial tab index
+  final int initialIndex;
+  final String? vaccinationIdToShow; // 🆕 ID của vaccination cần show popup
   
-  const HomeScreen({Key? key, this.initialIndex = 0}) : super(key: key);
+  const HomeScreen({
+    Key? key, 
+    this.initialIndex = 0,
+    this.vaccinationIdToShow, // 🆕 Truyền ID
+  }) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -82,11 +87,13 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: IndexedStack(
           index: _selectedIndex,
-          children: const [
-            _HomeContentWidget(),
-            PetsListScreen(),
-            VaccinationsListScreen(),
-            ProfileScreen(),
+          children: [
+            const _HomeContentWidget(),
+            const PetsListScreen(),
+            VaccinationsListScreen(
+              vaccinationIdToShow: widget.vaccinationIdToShow, // 🆕 Truyền ID
+            ),
+            const ProfileScreen(),
           ],
         ),
       ),
@@ -249,9 +256,9 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
                           : null,
                       child: _userProfile?.avatarUrl == null
                           ? Text(
-                              _getDisplayName(user)
-                                  .substring(0, 1)
-                                  .toUpperCase(),
+                              _getDisplayName(
+                                user,
+                              ).substring(0, 1).toUpperCase(),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -308,8 +315,10 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
                       return Stack(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.notifications_outlined,
-                                size: 26),
+                            icon: const Icon(
+                              Icons.notifications_outlined,
+                              size: 26,
+                            ),
                             onPressed: () {
                               Navigator.push(
                                 context,
@@ -370,8 +379,10 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
                       decoration: InputDecoration(
                         hintText: 'Tìm kiếm người dùng...',
                         hintStyle: TextStyle(color: Colors.grey[500]),
-                        prefixIcon: const Icon(Icons.search,
-                            color: Color(0xFFFF9966)),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Color(0xFFFF9966),
+                        ),
                         filled: true,
                         fillColor: isDark
                             ? const Color(0xFF1E1E1E)
@@ -380,11 +391,11 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 0),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 0),
                       ),
                       style: TextStyle(
-                          color: isDark ? Colors.white : Colors.black),
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
                     ),
 
                     // Search results
@@ -413,61 +424,61 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
                                 ),
                               )
                             : _searchResults.isEmpty
-                                ? Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Text(
-                                      'Không tìm thấy người dùng',
-                                      style: TextStyle(color: Colors.grey[600]),
+                            ? Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Text(
+                                  'Không tìm thấy người dùng',
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              )
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: _searchResults.length,
+                                itemBuilder: (context, index) {
+                                  final searchUser = _searchResults[index];
+                                  return ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: const Color(0xFFFF9966),
+                                      backgroundImage:
+                                          searchUser['avatarUrl'] != null
+                                          ? NetworkImage(
+                                              searchUser['avatarUrl'],
+                                            )
+                                          : null,
+                                      child: searchUser['avatarUrl'] == null
+                                          ? Text(
+                                              searchUser['name']
+                                                  .toString()
+                                                  .substring(0, 1)
+                                                  .toUpperCase(),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            )
+                                          : null,
                                     ),
-                                  )
-                                : ListView.builder(
-                                    shrinkWrap: true,
-                                    itemCount: _searchResults.length,
-                                    itemBuilder: (context, index) {
-                                      final searchUser = _searchResults[index];
-                                      return ListTile(
-                                        leading: CircleAvatar(
-                                          backgroundColor:
-                                              const Color(0xFFFF9966),
-                                          backgroundImage:
-                                              searchUser['avatarUrl'] != null
-                                                  ? NetworkImage(
-                                                      searchUser['avatarUrl'])
-                                                  : null,
-                                          child: searchUser['avatarUrl'] == null
-                                              ? Text(
-                                                  searchUser['name']
-                                                      .toString()
-                                                      .substring(0, 1)
-                                                      .toUpperCase(),
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                )
-                                              : null,
-                                        ),
-                                        title: Text(searchUser['name']),
-                                        subtitle: Text(searchUser['email']),
-                                        onTap: () {
-                                          _searchController.clear();
-                                          setState(() {
-                                            _searchResults = [];
-                                            _showSearchBar = false;
-                                          });
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  UserProfileScreen(
+                                    title: Text(searchUser['name']),
+                                    subtitle: Text(searchUser['email']),
+                                    onTap: () {
+                                      _searchController.clear();
+                                      setState(() {
+                                        _searchResults = [];
+                                        _showSearchBar = false;
+                                      });
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              UserProfileScreen(
                                                 userId: searchUser['uid'],
                                               ),
-                                            ),
-                                          );
-                                        },
+                                        ),
                                       );
                                     },
-                                  ),
+                                  );
+                                },
+                              ),
                       ),
                     ],
                   ],
@@ -546,8 +557,11 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
                       padding: const EdgeInsets.all(32),
                       child: Column(
                         children: [
-                          Icon(Icons.article,
-                              size: 80, color: Colors.grey[300]),
+                          Icon(
+                            Icons.article,
+                            size: 80,
+                            color: Colors.grey[300],
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'Chưa có bài viết nào',
@@ -572,13 +586,10 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
               return SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final post = postProvider.posts[index];
-                      return PostCard(post: post);
-                    },
-                    childCount: postProvider.posts.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final post = postProvider.posts[index];
+                    return PostCard(post: post);
+                  }, childCount: postProvider.posts.length),
                 ),
               );
             },
