@@ -54,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context.read<PetProvider>().loadPets();
       context.read<VaccinationProvider>().loadVaccinations();
       context.read<PostProvider>().loadPosts();
+      await context.read<NotificationProvider>().checkVaccinationReminders();
       context.read<NotificationProvider>().loadNotifications();
     }
   }

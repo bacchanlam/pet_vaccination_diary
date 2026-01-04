@@ -4,7 +4,10 @@ import '../models/notification.dart';
 import '../providers/notification_provider.dart';
 import '../providers/post_provider.dart';
 import 'post_detail_screen.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/vaccination.dart';
+import '../models/pet.dart';
+import '../screens/pet_detail_screen.dart';
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({Key? key}) : super(key: key);
 
@@ -46,7 +49,83 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       await context.read<NotificationProvider>().markAsRead(notification.id!);
     }
 
-    // Get the post
+    // 🆕 Handle vaccine reminder
+    if (notification.type == 'vaccine_reminder') {
+      if (notification.vaccinationId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không tìm thấy thông tin lịch tiêm'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Lấy vaccination từ Firestore
+      try {
+        final vacDoc = await FirebaseFirestore.instance
+            .collection('vaccinations')
+            .doc(notification.vaccinationId)
+            .get();
+
+        if (!vacDoc.exists) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Lịch tiêm không tồn tại hoặc đã bị xóa'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
+
+        final vaccination = Vaccination.fromFirestore(vacDoc);
+
+        // Lấy pet info
+        final petDoc = await FirebaseFirestore.instance
+            .collection('pets')
+            .doc(vaccination.petId)
+            .get();
+
+        if (!petDoc.exists) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Thú cưng không tồn tại'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
+
+        final pet = Pet.fromFirestore(petDoc);
+
+        // Navigate to PetDetailScreen
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PetDetailScreen(pet: pet),
+            ),
+          );
+        }
+      } catch (e) {
+        print('❌ Error loading vaccination: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+      return;
+    }
+
+    // Handle post notifications (like/comment)
     final allPosts = context.read<PostProvider>().posts;
     try {
       final post = allPosts.firstWhere((p) => p.id == notification.postId);
@@ -58,7 +137,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         );
       }
     } catch (e) {
-      // Post không tồn tại
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -69,7 +147,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       }
     }
   }
-
   // 🆕 Show delete all confirmation dialog
   Future<void> _showDeleteAllDialog() async {
     final confirmed = await showDialog<bool>(
