@@ -5,10 +5,17 @@ import 'package:table_calendar/table_calendar.dart';
 import '../providers/vaccination_provider.dart';
 import '../providers/pet_provider.dart';
 import 'add_vaccination_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/vaccination.dart';
+import '../models/pet.dart';
 
 class VaccinationsListScreen extends StatefulWidget {
-  const VaccinationsListScreen({Key? key}) : super(key: key);
-
+  final String? vaccinationIdToShow; // 🆕 ID của vaccination cần show popup
+  
+  const VaccinationsListScreen({
+    Key? key,
+    this.vaccinationIdToShow, // 🆕
+  }) : super(key: key);
   @override
   State<VaccinationsListScreen> createState() => _VaccinationsListScreenState();
 }
@@ -25,6 +32,13 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    
+    // 🆕 Nếu có vaccinationId, tự động show popup sau khi build xong
+    if (widget.vaccinationIdToShow != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showVaccinationDetailsById(widget.vaccinationIdToShow!);
+      });
+    }
   }
 
   @override
@@ -265,7 +279,7 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
       return _buildEmptyState(
         icon: Icons.vaccines,
         title: 'Chưa có lịch tiêm nào',
-        subtitle: 'Nhấn nút "Thêm lịch" để bắt đầu',
+        subtitle: '',
         isDark: isDark,
       );
     }
@@ -951,57 +965,6 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
     );
   }
 
-  // void _showAddVaccinationDialog(BuildContext context, PetProvider petProvider) {
-  //   if (petProvider.pets.length == 1) {
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(
-  //         builder: (context) => AddVaccinationScreen(petId: petProvider.pets.first.id!),
-  //       ),
-  //     );
-  //   } else {
-  //     showModalBottomSheet(
-  //       context: context,
-  //       shape: const RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-  //       ),
-  //       builder: (context) => Container(
-  //         padding: const EdgeInsets.all(24),
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: [
-  //             const Text(
-  //               'Chọn thú cưng',
-  //               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-  //             ),
-  //             const SizedBox(height: 16),
-  //             ...petProvider.pets.map((pet) => ListTile(
-  //               leading: CircleAvatar(
-  //                 backgroundColor: const Color(0xFFFF9966),
-  //                 backgroundImage: pet.imageUrl != null ? NetworkImage(pet.imageUrl!) : null,
-  //                 child: pet.imageUrl == null ? const Icon(Icons.pets, color: Colors.white) : null,
-  //               ),
-  //               title: Text(pet.name),
-  //               subtitle: Text('${pet.type} - ${pet.breed}'),
-  //               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-  //               onTap: () {
-  //                 Navigator.pop(context);
-  //                 Navigator.push(
-  //                   context,
-  //                   MaterialPageRoute(
-  //                     builder: (context) => AddVaccinationScreen(petId: pet.id!),
-  //                   ),
-  //                 );
-  //               },
-  //             )).toList(),
-  //           ],
-  //         ),
-  //       ),
-  //     );
-  //   }
-  // }
-
   void _showVaccinationDetails(
     BuildContext context,
     dynamic vaccination,
@@ -1256,5 +1219,61 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
         ],
       ),
     );
+  }
+  // 🆕 Hàm load và hiển thị chi tiết vaccination theo ID
+  Future<void> _showVaccinationDetailsById(String vaccinationId) async {
+    try {
+      // Load vaccination từ Firestore
+      final vaccinationDoc = await FirebaseFirestore.instance
+          .collection('vaccinations')
+          .doc(vaccinationId)
+          .get();
+
+      if (!vaccinationDoc.exists) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Lịch tiêm không tồn tại hoặc đã bị xóa'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      final vaccination = Vaccination.fromFirestore(vaccinationDoc);
+      
+      // Load pet
+      final petDoc = await FirebaseFirestore.instance
+          .collection('pets')
+          .doc(vaccination.petId)
+          .get();
+
+      final pet = petDoc.exists ? Pet.fromFirestore(petDoc) : null;
+
+      // Hiển thị popup
+      if (mounted) {
+        final vacProvider = context.read<VaccinationProvider>();
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
+        _showVaccinationDetails(
+          context,
+          vaccination,
+          pet,
+          vacProvider,
+          isDark,
+        );
+      }
+    } catch (e) {
+      print('❌ Error loading vaccination: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể tải thông tin lịch tiêm'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

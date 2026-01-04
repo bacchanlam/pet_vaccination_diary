@@ -47,27 +47,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       await context.read<NotificationProvider>().markAsRead(notification.id!);
     }
 
-    // 🔥 FIXED: Handle vaccine reminder - navigate to VaccinationsListScreen
+    // 🔥 Handle vaccine reminder - navigate and show popup
     if (notification.type == 'vaccine_reminder') {
       if (mounted) {
         // Pop back to home and navigate to vaccination tab
         Navigator.of(context).popUntil((route) => route.isFirst);
         
-        // Navigate to HomeScreen with vaccination tab (index 2)
+        // Navigate to HomeScreen and pass vaccination ID to show popup
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => const HomeScreen(initialIndex: 2), // Tab 2 = Lịch tiêm
+            builder: (context) => HomeScreen(
+              initialIndex: 2, // Tab 2 = Lịch tiêm
+              vaccinationIdToShow: notification.vaccinationId, // 🆕 Truyền ID để show popup
+            ),
           ),
         );
       }
       return;
     }
-
     // Handle post notifications (like/comment)
     final allPosts = context.read<PostProvider>().posts;
     try {
       final post = allPosts.firstWhere((p) => p.id == notification.postId);
-      
+
       if (mounted) {
         Navigator.push(
           context,
@@ -166,10 +168,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text(
-              'Xóa',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Xóa', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -199,7 +198,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               if (provider.notifications.isEmpty) {
                 return const SizedBox.shrink();
               }
-              
+
               return PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
                 onSelected: (value) {
@@ -221,7 +220,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       value: 'mark_all_read',
                       child: Row(
                         children: [
-                          Icon(Icons.done_all, size: 20, color: Color(0xFFFF9966)),
+                          Icon(
+                            Icons.done_all,
+                            size: 20,
+                            color: Color(0xFFFF9966),
+                          ),
                           SizedBox(width: 8),
                           Text('Đánh dấu tất cả đã đọc'),
                         ],
@@ -254,7 +257,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.notifications_none, size: 100, color: Colors.grey[300]),
+                  Icon(
+                    Icons.notifications_none,
+                    size: 100,
+                    color: Colors.grey[300],
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Chưa có thông báo nào',
@@ -299,7 +306,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Text('Xóa thông báo'),
             content: const Text('Bạn có chắc muốn xóa thông báo này?'),
             actions: [
@@ -311,7 +320,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: const Text('Xóa', style: TextStyle(color: Colors.white)),
               ),
@@ -332,14 +343,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           children: [
             Icon(Icons.delete, color: Colors.white, size: 32),
             SizedBox(height: 4),
-            Text('Xóa', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            Text(
+              'Xóa',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),
       onDismissed: (direction) {
-        context.read<NotificationProvider>().deleteNotification(notification.id!);
+        context.read<NotificationProvider>().deleteNotification(
+          notification.id!,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã xóa thông báo'), duration: Duration(seconds: 2)),
+          const SnackBar(
+            content: Text('Đã xóa thông báo'),
+            duration: Duration(seconds: 2),
+          ),
         );
       },
       child: Container(
@@ -350,11 +372,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               : (isDark ? const Color(0xFF2A2A2A) : const Color(0xFFFFF3E0)),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: notification.isRead ? Colors.transparent : const Color(0xFFFF9966).withOpacity(0.3),
+            color: notification.isRead
+                ? Colors.transparent
+                : const Color(0xFFFF9966).withOpacity(0.3),
             width: 2,
           ),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         child: ListTile(
@@ -367,15 +395,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 backgroundColor: notification.getIconColor(),
                 // 🔥 FIXED: For vaccine reminders, show vaccine icon instead of user avatar
                 child: notification.type == 'vaccine_reminder'
-                    ? Icon(notification.getIcon(), color: Colors.white, size: 28)
-                    : (notification.fromUserAvatar != null 
-                        ? null 
-                        : Text(
-                            notification.fromUserName.substring(0, 1).toUpperCase(),
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                          )),
-                backgroundImage: notification.type != 'vaccine_reminder' && notification.fromUserAvatar != null 
-                    ? NetworkImage(notification.fromUserAvatar!) 
+                    ? Icon(
+                        notification.getIcon(),
+                        color: Colors.white,
+                        size: 28,
+                      )
+                    : (notification.fromUserAvatar != null
+                          ? null
+                          : Text(
+                              notification.fromUserName
+                                  .substring(0, 1)
+                                  .toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )),
+                backgroundImage:
+                    notification.type != 'vaccine_reminder' &&
+                        notification.fromUserAvatar != null
+                    ? NetworkImage(notification.fromUserAvatar!)
                     : null,
               ),
               if (notification.type != 'vaccine_reminder')
@@ -387,9 +426,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     decoration: BoxDecoration(
                       color: notification.getIconColor(),
                       shape: BoxShape.circle,
-                      border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : Colors.white, width: 2),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                        width: 2,
+                      ),
                     ),
-                    child: Icon(notification.getIcon(), size: 12, color: Colors.white),
+                    child: Icon(
+                      notification.getIcon(),
+                      size: 12,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
             ],
@@ -398,16 +444,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             // 🔥 FIXED: Use the proper message from notification model
             notification.getMessage(),
             style: TextStyle(
-              fontSize: 15, 
+              fontSize: 15,
               color: isDark ? Colors.white : Colors.black,
-              fontWeight: notification.isRead ? FontWeight.normal : FontWeight.w600,
+              fontWeight: notification.isRead
+                  ? FontWeight.normal
+                  : FontWeight.w600,
             ),
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 🔥 REMOVED: Comment content section (only for comment notifications)
-              if (notification.type == 'comment' && notification.commentContent != null) ...[
+              if (notification.type == 'comment' &&
+                  notification.commentContent != null) ...[
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -417,14 +466,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   child: Text(
                     '"${notification.commentContent}"',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
               const SizedBox(height: 4),
-              Text(_getTimeAgo(notification.createdAt), style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+              Text(
+                _getTimeAgo(notification.createdAt),
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              ),
             ],
           ),
           trailing: Row(
@@ -435,7 +491,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   width: 10,
                   height: 10,
                   margin: const EdgeInsets.only(right: 8),
-                  decoration: const BoxDecoration(color: Color(0xFFFF9966), shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFF9966),
+                    shape: BoxShape.circle,
+                  ),
                 ),
               IconButton(
                 icon: const Icon(Icons.delete_outline, size: 20),
