@@ -57,8 +57,7 @@ class PetsListScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color:
-                                  const Color(0xFFFF9966).withOpacity(0.3),
+                              color: const Color(0xFFFF9966).withOpacity(0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -83,8 +82,11 @@ class PetsListScreen extends StatelessWidget {
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.add,
-                                      color: Colors.white, size: 20),
+                                  Icon(
+                                    Icons.add,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 4),
                                   Text(
                                     'Thêm',
@@ -194,25 +196,23 @@ class PetsListScreen extends StatelessWidget {
                   sliver: SliverGrid(
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.75,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final pet = petProvider.pets[index];
-                        final vaccinations =
-                            vacProvider.getVaccinationsForPet(pet.id!);
-                        return _buildPetGridCard(
-                          context,
-                          pet,
-                          vaccinations.length,
-                          isDark,
-                        );
-                      },
-                      childCount: petProvider.pets.length,
-                    ),
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.75,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final pet = petProvider.pets[index];
+                      final vaccinations = vacProvider.getVaccinationsForPet(
+                        pet.id!,
+                      );
+                      return _buildPetGridCard(
+                        context,
+                        pet,
+                        vaccinations.length,
+                        isDark,
+                      );
+                    }, childCount: petProvider.pets.length),
                   ),
                 ),
 
@@ -281,8 +281,7 @@ class PetsListScreen extends StatelessWidget {
                                 width: double.infinity,
                                 height: double.infinity,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stack) =>
-                                    Center(
+                                errorBuilder: (context, error, stack) => Center(
                                   child: Icon(
                                     Icons.pets,
                                     size: 50,
@@ -299,7 +298,7 @@ class PetsListScreen extends StatelessWidget {
                               ),
                             ),
                     ),
-                    
+
                     // Vaccination Badge - TOP RIGHT
                     Positioned(
                       top: 8,
@@ -375,12 +374,7 @@ class PetsListScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                           color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black,
-                              blurRadius: 4,
-                            ),
-                          ],
+                          shadows: [Shadow(color: Colors.black, blurRadius: 4)],
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -415,8 +409,8 @@ class PetsListScreen extends StatelessWidget {
                                 pet.type == 'Chó'
                                     ? Icons.pets
                                     : pet.type == 'Mèo'
-                                        ? Icons.pets
-                                        : Icons.cruelty_free,
+                                    ? Icons.pets
+                                    : Icons.cruelty_free,
                                 size: 14,
                                 color: const Color(0xFFFF9966),
                               ),
@@ -446,9 +440,7 @@ class PetsListScreen extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                pet.gender == 'Đực'
-                                    ? Icons.male
-                                    : Icons.female,
+                                pet.gender == 'Đực' ? Icons.male : Icons.female,
                                 size: 14,
                                 color: Colors.blue,
                               ),

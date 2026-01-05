@@ -1,4 +1,3 @@
-// lib/screens/profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +5,7 @@ import '../services/auth_service.dart';
 import '../providers/theme_provider.dart';
 import '../models/user.dart';
 import 'edit_profile_screen.dart';
+import 'dart:ui';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -27,12 +27,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
-    
+
     if (user != null) {
       setState(() => _isLoading = true);
-      
+
       _userProfile = await _authService.getUserProfile(user.uid);
-      
+
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -43,16 +43,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_userProfile?.name != null && _userProfile!.name.isNotEmpty) {
       return _userProfile!.name;
     }
-    
+
     final user = FirebaseAuth.instance.currentUser;
     if (user?.displayName != null && user!.displayName!.isNotEmpty) {
       return user.displayName!;
     }
-    
+
     if (user?.email != null) {
       return user!.email!.split('@')[0];
     }
-    
+
     return 'Người dùng';
   }
 
@@ -60,7 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _isLoading
@@ -71,96 +71,290 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // Profile Header with gradient
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Color(0xFFFF9966), Color(0xFFFF8C5A)],
+                        colors: [
+                          const Color(0xFFFF6B6B),
+                          const Color(0xFFFF9966),
+                          const Color(0xFFFFBB66),
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                     ),
-                    child: Column(
+                    child: Stack(
                       children: [
-                        // Avatar
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 4,
+                        // Animated circles background
+                        Positioned(
+                          top: -50,
+                          right: -50,
+                          child: Container(
+                            width: 200,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withOpacity(0.1),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
                           ),
-                          child: CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Colors.white,
-                            backgroundImage: _userProfile?.avatarUrl != null
-                                ? NetworkImage(_userProfile!.avatarUrl!)
-                                : null,
-                            child: _userProfile?.avatarUrl == null
-                                ? Text(
-                                    _getDisplayName().substring(0, 1).toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Color(0xFFFF9966),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 40,
+                        ),
+                        Positioned(
+                          top: 100,
+                          left: -30,
+                          child: Container(
+                            width: 150,
+                            height: 150,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withOpacity(0.08),
+                            ),
+                          ),
+                        ),
+
+                        // Main content
+                        SafeArea(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              children: [
+                                const SizedBox(height: 20),
+
+                                // Glassmorphic card
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(30),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(
+                                      sigmaX: 10,
+                                      sigmaY: 10,
                                     ),
-                                  )
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _getDisplayName(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          user?.email ?? '',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        // Edit Profile Button
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const EditProfileScreen(),
-                              ),
-                            );
-                            
-                            // Reload nếu có thay đổi
-                            if (result == true) {
-                              _loadUserData();
-                            }
-                          },
-                          icon: const Icon(Icons.edit, size: 18, color: Colors.white),
-                          label: const Text(
-                            'Chỉnh sửa hồ sơ',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.white),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(24),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(30),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.3),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          // Avatar with glow effect
+                                          Stack(
+                                            children: [
+                                              // Glow effect
+                                              Container(
+                                                width: 140,
+                                                height: 140,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.white
+                                                          .withOpacity(0.3),
+                                                      blurRadius: 30,
+                                                      spreadRadius: 10,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              // Avatar
+                                              Container(
+                                                width: 140,
+                                                height: 140,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: Colors.white,
+                                                    width: 4,
+                                                  ),
+                                                ),
+                                                child: CircleAvatar(
+                                                  radius: 66,
+                                                  backgroundColor: Colors.white,
+                                                  backgroundImage:
+                                                      _userProfile?.avatarUrl !=
+                                                          null
+                                                      ? NetworkImage(
+                                                          _userProfile!
+                                                              .avatarUrl!,
+                                                        )
+                                                      : null,
+                                                  child:
+                                                      _userProfile?.avatarUrl ==
+                                                          null
+                                                      ? Text(
+                                                          _getDisplayName()
+                                                              .substring(0, 1)
+                                                              .toUpperCase(),
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Color(
+                                                                  0xFFFF9966,
+                                                                ),
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontSize: 56,
+                                                              ),
+                                                        )
+                                                      : null,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+
+                                          const SizedBox(height: 20),
+
+                                          // Name
+                                          Text(
+                                            _getDisplayName(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.5,
+                                              shadows: [
+                                                Shadow(
+                                                  color: Colors.black26,
+                                                  offset: Offset(0, 2),
+                                                  blurRadius: 4,
+                                                ),
+                                              ],
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+
+                                          const SizedBox(height: 8),
+
+                                          // Email with icon
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.email_rounded,
+                                                color: Colors.white.withOpacity(
+                                                  0.9,
+                                                ),
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Flexible(
+                                                child: Text(
+                                                  user?.email ?? '',
+                                                  style: TextStyle(
+                                                    color: Colors.white
+                                                        .withOpacity(0.9),
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+
+                                          const SizedBox(height: 24),
+
+                                          // Edit button with gradient
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              gradient: const LinearGradient(
+                                                colors: [
+                                                  Colors.white,
+                                                  Color(0xFFFFF5E6),
+                                                ],
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.2),
+                                                  blurRadius: 15,
+                                                  offset: const Offset(0, 5),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Material(
+                                              color: Colors.transparent,
+                                              child: InkWell(
+                                                onTap: () async {
+                                                  final result =
+                                                      await Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              const EditProfileScreen(),
+                                                        ),
+                                                      );
+
+                                                  if (result == true) {
+                                                    _loadUserData();
+                                                  }
+                                                },
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 32,
+                                                        vertical: 14,
+                                                      ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              6,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: const Color(
+                                                            0xFFFF9966,
+                                                          ).withOpacity(0.2),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
+                                                        child: const Icon(
+                                                          Icons.edit_rounded,
+                                                          color: Color(
+                                                            0xFFFF9966,
+                                                          ),
+                                                          size: 18,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 12),
+                                                      const Text(
+                                                        'Chỉnh sửa hồ sơ',
+                                                        style: TextStyle(
+                                                          color: Color(
+                                                            0xFFFF9966,
+                                                          ),
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          letterSpacing: 0.3,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 20),
+                              ],
                             ),
                           ),
                         ),
@@ -177,7 +371,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: 'Cập nhật mật khẩu của bạn',
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tính năng đang phát triển')),
+                        const SnackBar(
+                          content: Text('Tính năng đang phát triển'),
+                        ),
                       );
                     },
                   ),
@@ -192,7 +388,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: 'Quản lý thông báo',
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tính năng đang phát triển')),
+                        const SnackBar(
+                          content: Text('Tính năng đang phát triển'),
+                        ),
                       );
                     },
                   ),
@@ -202,15 +400,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: 'Tiếng Việt',
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tính năng đang phát triển')),
+                        const SnackBar(
+                          content: Text('Tính năng đang phát triển'),
+                        ),
                       );
                     },
                   ),
                   _buildMenuItem(
                     icon: Icons.dark_mode_outlined,
                     title: 'Giao diện',
-                    subtitle: context.watch<ThemeProvider>().isDarkMode 
-                        ? 'Chế độ tối' 
+                    subtitle: context.watch<ThemeProvider>().isDarkMode
+                        ? 'Chế độ tối'
                         : 'Chế độ sáng',
                     trailing: Switch(
                       value: context.watch<ThemeProvider>().isDarkMode,
@@ -234,7 +434,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: 'Câu hỏi thường gặp',
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tính năng đang phát triển')),
+                        const SnackBar(
+                          content: Text('Tính năng đang phát triển'),
+                        ),
                       );
                     },
                   ),
@@ -244,7 +446,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: 'Điều khoản sử dụng',
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tính năng đang phát triển')),
+                        const SnackBar(
+                          content: Text('Tính năng đang phát triển'),
+                        ),
                       );
                     },
                   ),
@@ -272,7 +476,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
 
                   const SizedBox(height: 20),
-                  
+
                   // Logout Button
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -358,21 +562,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
         subtitle: subtitle != null
             ? Text(
                 subtitle,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
               )
             : null,
-        trailing: trailing ?? 
+        trailing:
+            trailing ??
             const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
         onTap: onTap,
       ),
@@ -383,18 +582,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Đăng xuất'),
         content: const Text('Bạn có chắc muốn đăng xuất khỏi ứng dụng?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'Hủy',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
+            child: Text('Hủy', style: TextStyle(color: Colors.grey[600])),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),

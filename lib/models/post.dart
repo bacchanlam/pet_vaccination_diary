@@ -7,7 +7,7 @@ class Post {
   final String? userAvatar;
   final String content;
   final String? imageUrl;
-  final List<String> likes; // Danh sách userId đã like
+  final List<String> likes;
   final int commentCount;
   final DateTime createdAt;
 
@@ -21,10 +21,9 @@ class Post {
     List<String>? likes,
     this.commentCount = 0,
     DateTime? createdAt,
-  })  : likes = likes ?? [],
-        createdAt = createdAt ?? DateTime.now();
+  }) : likes = likes ?? [],
+       createdAt = createdAt ?? DateTime.now();
 
-  // Convert to Map
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
@@ -38,7 +37,6 @@ class Post {
     };
   }
 
-  // Create from Firestore
   factory Post.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Post(
@@ -54,11 +52,9 @@ class Post {
     );
   }
 
-  // Check if user liked
   bool isLikedBy(String userId) {
     return likes.contains(userId);
   }
 
-  // Get like count
   int get likeCount => likes.length;
 }

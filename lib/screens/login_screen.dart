@@ -26,9 +26,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // Trong file login_screen.dart, cập nhật hàm _login:
-
-  // Tìm đến hàm _login và thay thế:
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -40,12 +37,10 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
 
-      // Nếu màn hình đã bị gỡ bỏ (do AuthWrapper chuyển trang), dừng ngay lập tức
       if (!mounted) return;
 
       if (error == null) {
         print('✅ Login successful');
-        // Không gọi setState ở đây nữa vì AuthWrapper sẽ tự đổi sang Home
       } else {
         setState(() => _isLoading = false);
         if (error == 'EMAIL_NOT_VERIFIED') {
@@ -66,11 +61,11 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => Theme(
-        data: ThemeData.light(), // 🔥 FORCE LIGHT THEME
+        data: ThemeData.light(),
         child: WillPopScope(
           onWillPop: () async => false,
           child: AlertDialog(
-            backgroundColor: Colors.white, // 🔥 Nền trắng
+            backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -81,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Expanded(
                   child: Text(
                     'Email chưa xác thực',
-                    style: TextStyle(color: Colors.black), // 🔥 Text đen
+                    style: TextStyle(color: Colors.black),
                   ),
                 ),
               ],
@@ -92,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const Text(
                   'Vui lòng xác thực email của bạn để tiếp tục sử dụng ứng dụng.',
-                  style: TextStyle(fontSize: 15, color: Colors.black87), // 🔥
+                  style: TextStyle(fontSize: 15, color: Colors.black87),
                 ),
                 const SizedBox(height: 16),
                 Container(
@@ -118,32 +113,32 @@ class _LoginScreenState extends State<LoginScreen> {
                               _emailController.text.trim(),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black, // 🔥
+                                color: Colors.black,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const Divider(height: 20, color: Colors.grey), // 🔥
+                      const Divider(height: 20, color: Colors.grey),
                       const Text(
                         '📌 Hướng dẫn:',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.black, // 🔥
+                          color: Colors.black,
                         ),
                       ),
                       const SizedBox(height: 8),
                       const Text(
                         '1. Kiểm tra email (kể cả Spam)',
-                        style: TextStyle(color: Colors.black87), // 🔥
+                        style: TextStyle(color: Colors.black87),
                       ),
                       const Text(
                         '2. Click vào link xác thực',
-                        style: TextStyle(color: Colors.black87), // 🔥
+                        style: TextStyle(color: Colors.black87),
                       ),
                       const Text(
                         '3. Quay lại app và đăng nhập lại',
-                        style: TextStyle(color: Colors.black87), // 🔥
+                        style: TextStyle(color: Colors.black87),
                       ),
                     ],
                   ),
@@ -151,7 +146,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
             actions: [
-              // Chỉ còn nút "OK"
               TextButton(
                 onPressed: () async {
                   await _authService.signOut();

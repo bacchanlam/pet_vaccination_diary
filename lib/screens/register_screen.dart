@@ -41,11 +41,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       name: _nameController.text.trim(),
     );
 
-    // Đợi một chút để đảm bảo mọi thứ hoàn tất
     await Future.delayed(const Duration(milliseconds: 800));
 
     if (error == null) {
-      // Đăng xuất người dùng vừa đăng ký (nếu đang đăng nhập)
       await _authService.signOut();
 
       setState(() {
@@ -54,14 +52,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       print('✅ Registration successful - Verification email sent');
       if (mounted) {
-        // Hiển thị dialog yêu cầu xác thực email
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) => Theme(
-            data: ThemeData.light(), // 🔥 FORCE LIGHT THEME
+            data: ThemeData.light(),
             child: AlertDialog(
-              backgroundColor: Colors.white, // 🔥 Nền trắng
+              backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -83,7 +80,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const Expanded(
                     child: Text(
                       'Xác thực Email',
-                      style: TextStyle(color: Colors.black), // 🔥 Text đen
+                      style: TextStyle(color: Colors.black),
                     ),
                   ),
                 ],
@@ -97,13 +94,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black, // 🔥 Text đen
+                      color: Colors.black,
                     ),
                   ),
                   const SizedBox(height: 12),
                   const Text(
                     'Chúng tôi đã gửi email xác thực đến:',
-                    style: TextStyle(fontSize: 14, color: Colors.black87), // 🔥
+                    style: TextStyle(fontSize: 14, color: Colors.black87),
                   ),
                   const SizedBox(height: 8),
                   Container(
@@ -133,28 +130,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     '📌 Vui lòng:',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.black, // 🔥
+                      color: Colors.black,
                     ),
                   ),
                   const SizedBox(height: 8),
                   const Text(
                     '1. Kiểm tra hộp thư của bạn',
-                    style: TextStyle(color: Colors.black87), // 🔥
+                    style: TextStyle(color: Colors.black87),
                   ),
                   const Text(
                     '2. Mở email và click vào link xác thực',
-                    style: TextStyle(color: Colors.black87), // 🔥
+                    style: TextStyle(color: Colors.black87),
                   ),
                   const Text(
                     '3. Quay lại app và đăng nhập',
-                    style: TextStyle(color: Colors.black87), // 🔥
+                    style: TextStyle(color: Colors.black87),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     '💡 Lưu ý: Kiểm tra cả thư mục Spam nếu không thấy email',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[700], // 🔥
+                      color: Colors.grey[700],
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -163,10 +160,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               actions: [
                 TextButton(
                   onPressed: () async {
-                    // Gửi lại email xác thực
                     setState(() => _isLoading = true);
 
-                    // Đăng nhập tạm để gửi lại email
                     final signInError = await _authService.signIn(
                       email: _emailController.text.trim(),
                       password: _passwordController.text.trim(),
@@ -211,13 +206,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                   child: const Text(
                     'Gửi lại email',
-                    style: TextStyle(color: Color(0xFFFF9966)), // 🔥 Text cam
+                    style: TextStyle(color: Color(0xFFFF9966)),
                   ),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context); // Đóng dialog
-                    Navigator.pop(context); // Quay về login
+                    Navigator.pop(context);
+                    Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF9966),

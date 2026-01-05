@@ -11,12 +11,10 @@ import '../models/pet.dart';
 import '../widgets/mark_completed_dialog.dart';
 
 class VaccinationsListScreen extends StatefulWidget {
-  final String? vaccinationIdToShow; // 🆕 ID của vaccination cần show popup
+  final String? vaccinationIdToShow;
 
-  const VaccinationsListScreen({
-    Key? key,
-    this.vaccinationIdToShow, // 🆕
-  }) : super(key: key);
+  const VaccinationsListScreen({Key? key, this.vaccinationIdToShow})
+    : super(key: key);
   @override
   State<VaccinationsListScreen> createState() => _VaccinationsListScreenState();
 }
@@ -34,7 +32,6 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // 🆕 Nếu có vaccinationId, tự động show popup sau khi build xong
     if (widget.vaccinationIdToShow != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showVaccinationDetailsById(widget.vaccinationIdToShow!);
@@ -219,6 +216,7 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
       },
     );
   }
+
   void _showMarkCompletedDialog(
     BuildContext context,
     dynamic vaccination,
@@ -1092,41 +1090,41 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
                       : Colors.green,
                 ),
               ],
-              if (vaccination.canMarkAsCompleted() && 
-                vaccination.status == 'pending') ...[
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context); // Đóng bottom sheet
-                    _showMarkCompletedDialog(
-                      context,
-                      vaccination,
-                      pet,
-                      provider,
-                    );
-                  },
-                  icon: const Icon(Icons.check_circle, color: Colors.white),
-                  label: const Text(
-                    'Đã tiêm',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+              if (vaccination.canMarkAsCompleted() &&
+                  vaccination.status == 'pending') ...[
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showMarkCompletedDialog(
+                        context,
+                        vaccination,
+                        pet,
+                        provider,
+                      );
+                    },
+                    icon: const Icon(Icons.check_circle, color: Colors.white),
+                    label: const Text(
+                      'Đã tiêm',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-            ],
+                const SizedBox(height: 12),
+              ],
               if (vaccination.notes != null &&
                   vaccination.notes!.isNotEmpty) ...[
                 const SizedBox(height: 24),
@@ -1147,7 +1145,7 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
                   ),
                 ),
               ],
-              
+
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -1207,7 +1205,6 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
         ),
       ),
     );
-    
   }
 
   Widget _buildDetailRow({
@@ -1300,7 +1297,6 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
     );
   }
 
-  // 🆕 Hàm load và hiển thị chi tiết vaccination theo ID
   Future<void> _showVaccinationDetailsById(String vaccinationId) async {
     try {
       // Load vaccination từ Firestore
@@ -1331,7 +1327,7 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
 
       final pet = petDoc.exists ? Pet.fromFirestore(petDoc) : null;
 
-      // Hiển thị popup
+      // Show popup
       if (mounted) {
         final vacProvider = context.read<VaccinationProvider>();
         final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1349,6 +1345,5 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
         );
       }
     }
-    
   }
 }

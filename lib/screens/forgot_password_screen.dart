@@ -48,8 +48,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // đóng dialog
-                Navigator.pop(context); // quay về login
+                Navigator.pop(context);
+                Navigator.pop(context);
               },
               child: const Text('OK'),
             ),

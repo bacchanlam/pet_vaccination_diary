@@ -57,13 +57,13 @@ class NotificationProvider extends ChangeNotifier {
 
     try {
       final service = VaccinationNotificationService();
-      
+
       // Cleanup expired reminders
       await service.cleanupExpiredVaccinationReminders();
-      
+
       // Create new reminders
       await service.checkAndCreateVaccinationReminders();
-      
+
       // Reload notifications
       await loadNotifications();
     } catch (e) {
@@ -86,8 +86,7 @@ class NotificationProvider extends ChangeNotifier {
 
     try {
       print('🔔 Creating like notification...');
-      
-      // 🔥 FIX: Kiểm tra xem đã có thông báo like cho post này từ user này chưa
+
       final existingNotification = await _firestore
           .collection('notifications')
           .where('userId', isEqualTo: postOwnerId)
@@ -184,20 +183,16 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  // 🔥 FIX: Mark notification as read - CẬP NHẬT LOCAL STATE ĐÚNG CÁCH
   Future<void> markAsRead(String notificationId) async {
     try {
-      // Update Firestore
       await _firestore.collection('notifications').doc(notificationId).update({
         'isRead': true,
       });
 
-      // 🔥 FIX: Update local state - Tìm và cập nhật notification
       final index = _notifications.indexWhere((n) => n.id == notificationId);
       if (index != -1) {
         final oldNotification = _notifications[index];
-        
-        // Tạo notification mới với isRead = true
+
         _notifications[index] = AppNotification(
           id: oldNotification.id,
           userId: oldNotification.userId,
@@ -213,13 +208,13 @@ class NotificationProvider extends ChangeNotifier {
           daysRemaining: oldNotification.daysRemaining,
           nextVaccinationDate: oldNotification.nextVaccinationDate,
           commentContent: oldNotification.commentContent,
-          isRead: true, // 🔥 ĐÂY LÀ ĐIỂM QUAN TRỌNG
+          isRead: true,
           createdAt: oldNotification.createdAt,
         );
 
         // Recalculate unread count
         _unreadCount = _notifications.where((n) => !n.isRead).length;
-        
+
         print('✅ Notification marked as read - Unread count: $_unreadCount');
         notifyListeners();
       }

@@ -90,17 +90,14 @@ class PostProvider extends ChangeNotifier {
       bool isLiking = false;
 
       if (likes.contains(user.uid)) {
-        // Unlike
         likes.remove(user.uid);
         print('👎 User unliked post');
 
-        // Xóa thông báo
         await notificationProvider.deleteLikeNotification(
           postOwnerId: postData.userId,
           postId: postId,
         );
       } else {
-        // Like
         likes.add(user.uid);
         isLiking = true;
         print('👍 User liked post');
@@ -125,7 +122,6 @@ class PostProvider extends ChangeNotifier {
         notifyListeners();
       }
 
-      // 🔔 TẠO THÔNG BÁO KHI LIKE
       if (isLiking) {
         print(
           '🔔 Creating like notification for post owner: ${postData.userId}',
@@ -151,7 +147,7 @@ class PostProvider extends ChangeNotifier {
     required String content,
     required String userName,
     String? userAvatar,
-    required NotificationProvider notificationProvider, // 🆕 THÊM THAM SỐ
+    required NotificationProvider notificationProvider,
   }) async {
     final user = _auth.currentUser;
     if (user == null) return false;
@@ -167,7 +163,6 @@ class PostProvider extends ChangeNotifier {
 
       await _firestore.collection('comments').add(comment.toMap());
 
-      // Tăng commentCount
       final postDoc = await _firestore.collection('posts').doc(postId).get();
       final post = Post.fromFirestore(postDoc);
 
@@ -175,7 +170,6 @@ class PostProvider extends ChangeNotifier {
         'commentCount': FieldValue.increment(1),
       });
 
-      // 🆕 Tạo thông báo
       await notificationProvider.createCommentNotification(
         postOwnerId: post.userId,
         postId: postId,
@@ -201,7 +195,6 @@ class PostProvider extends ChangeNotifier {
     }
 
     try {
-      // Get comment để lấy postId
       final commentDoc = await _firestore
           .collection('comments')
           .doc(commentId)
@@ -210,10 +203,8 @@ class PostProvider extends ChangeNotifier {
 
       final postId = commentDoc.data()?['postId'];
 
-      // Xóa comment
       await _firestore.collection('comments').doc(commentId).delete();
 
-      // Giảm commentCount
       if (postId != null) {
         await _firestore.collection('posts').doc(postId).update({
           'commentCount': FieldValue.increment(-1),

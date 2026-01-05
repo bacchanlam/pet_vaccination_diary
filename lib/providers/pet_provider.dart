@@ -12,12 +12,11 @@ class PetProvider extends ChangeNotifier {
   List<Pet> get pets => _pets;
   bool get isLoading => _isLoading;
 
-  // Load pets của user hiện tại
   Future<void> loadPets() async {
     final user = _auth.currentUser;
-    
+
     print('🔍 Current user: ${user?.uid}');
-    
+
     if (user == null) {
       print('❌ No user logged in');
       _pets = [];
@@ -29,17 +28,15 @@ class PetProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Lấy pets của user (không dùng orderBy để tránh lỗi index)
       final snapshot = await _firestore
           .collection('pets')
           .where('userId', isEqualTo: user.uid)
           .get();
 
       _pets = snapshot.docs.map((doc) => Pet.fromFirestore(doc)).toList();
-      
-      // Sort trong code
+
       _pets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
+
       print('✅ Loaded ${_pets.length} pets');
     } catch (e) {
       print('❌ Error loading pets: $e');
@@ -67,16 +64,15 @@ class PetProvider extends ChangeNotifier {
         gender: pet.gender,
         birthDate: pet.birthDate,
         imageUrl: pet.imageUrl,
-        createdAt: DateTime.now(), // 🔥 Đảm bảo có createdAt mới
+        createdAt: DateTime.now(),
       );
 
       await _firestore.collection('pets').add(petWithUserId.toMap());
-      
+
       print('✅ Pet added successfully');
-      
-      // Reload pets sau khi thêm
+
       await loadPets();
-      
+
       return true;
     } catch (e) {
       print('❌ Error adding pet: $e');
@@ -90,7 +86,6 @@ class PetProvider extends ChangeNotifier {
     if (user == null) return false;
 
     try {
-      // Kiểm tra quyền sở hữu
       final petDoc = await _firestore.collection('pets').doc(id).get();
       if (!petDoc.exists) return false;
 
@@ -100,7 +95,6 @@ class PetProvider extends ChangeNotifier {
         return false;
       }
 
-      // Update với userId cũ
       final petWithUserId = Pet(
         userId: existingPet.userId,
         name: pet.name,
@@ -109,12 +103,12 @@ class PetProvider extends ChangeNotifier {
         gender: pet.gender,
         birthDate: pet.birthDate,
         imageUrl: pet.imageUrl,
-        createdAt: existingPet.createdAt, // 🔥 Giữ nguyên createdAt cũ
+        createdAt: existingPet.createdAt,
       );
 
       await _firestore.collection('pets').doc(id).update(petWithUserId.toMap());
       await loadPets();
-      
+
       return true;
     } catch (e) {
       print('❌ Error updating pet: $e');
@@ -128,7 +122,6 @@ class PetProvider extends ChangeNotifier {
     if (user == null) return false;
 
     try {
-      // Kiểm tra quyền sở hữu
       final petDoc = await _firestore.collection('pets').doc(id).get();
       if (!petDoc.exists) return false;
 
@@ -138,19 +131,17 @@ class PetProvider extends ChangeNotifier {
         return false;
       }
 
-      // Xóa pet
       await _firestore.collection('pets').doc(id).delete();
-      
-      // Xóa tất cả vaccinations
+
       final vaccinations = await _firestore
           .collection('vaccinations')
           .where('petId', isEqualTo: id)
           .get();
-      
+
       for (var doc in vaccinations.docs) {
         await doc.reference.delete();
       }
-      
+
       await loadPets();
       return true;
     } catch (e) {

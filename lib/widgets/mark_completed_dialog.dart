@@ -57,10 +57,7 @@ class _MarkCompletedDialogState extends State<MarkCompletedDialog> {
             // Title
             const Text(
               'Xác nhận tiêm phòng',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
 
@@ -89,7 +86,8 @@ class _MarkCompletedDialogState extends State<MarkCompletedDialog> {
                   const SizedBox(height: 8),
                   _buildInfoRow(
                     icon: Icons.calendar_today,
-                    label: 'Ngày tiêm: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}',
+                    label:
+                        'Ngày tiêm: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}',
                     color: Colors.green,
                   ),
                 ],
@@ -135,10 +133,7 @@ class _MarkCompletedDialogState extends State<MarkCompletedDialog> {
                     ),
                     child: const Text(
                       'Hủy',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ),
                 ),
@@ -149,7 +144,9 @@ class _MarkCompletedDialogState extends State<MarkCompletedDialog> {
                         ? null
                         : () async {
                             setState(() => _isLoading = true);
-                            await widget.onConfirm(_notesController.text.trim());
+                            await widget.onConfirm(
+                              _notesController.text.trim(),
+                            );
                             if (context.mounted) {
                               Navigator.pop(context);
                             }
@@ -200,10 +197,7 @@ class _MarkCompletedDialogState extends State<MarkCompletedDialog> {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           ),
         ),
       ],

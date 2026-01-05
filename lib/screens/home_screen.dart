@@ -15,19 +15,15 @@ import 'notifications_screen.dart';
 import '../widgets/post_card.dart';
 import '../models/user.dart' as models;
 
-// 🔥 NEW: Global key để access HomeScreen state từ bên ngoài
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<_HomeScreenState> homeScreenKey = GlobalKey<_HomeScreenState>();
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
-  final String? vaccinationIdToShow; // 🆕 ID của vaccination cần show popup
-  
-  const HomeScreen({
-    Key? key, 
-    this.initialIndex = 0,
-    this.vaccinationIdToShow, // 🆕 Truyền ID
-  }) : super(key: key);
+  final String? vaccinationIdToShow;
+
+  const HomeScreen({Key? key, this.initialIndex = 0, this.vaccinationIdToShow})
+    : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -41,11 +37,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.initialIndex; // 🔥 Use initial index
+    _selectedIndex = widget.initialIndex;
     _loadUserData();
   }
 
-  // 🔥 NEW: Method to change tab from outside
+  //  Method to change tab from outside
   void changeTab(int index) {
     if (mounted) {
       setState(() {
@@ -91,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const _HomeContentWidget(),
             const PetsListScreen(),
             VaccinationsListScreen(
-              vaccinationIdToShow: widget.vaccinationIdToShow, // 🆕 Truyền ID
+              vaccinationIdToShow: widget.vaccinationIdToShow,
             ),
             const ProfileScreen(),
           ],
@@ -141,7 +137,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Widget riêng cho News Feed (giữ nguyên như cũ)
 class _HomeContentWidget extends StatefulWidget {
   const _HomeContentWidget({Key? key}) : super(key: key);
 
@@ -488,7 +483,7 @@ class _HomeContentWidgetState extends State<_HomeContentWidget> {
 
           SliverToBoxAdapter(child: SizedBox(height: _showSearchBar ? 16 : 20)),
 
-          // "Bạn đang nghĩ gì?" Box
+          // Create Post
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),

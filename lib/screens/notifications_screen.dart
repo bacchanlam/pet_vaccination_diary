@@ -4,7 +4,7 @@ import '../models/notification.dart';
 import '../providers/notification_provider.dart';
 import '../providers/post_provider.dart';
 import 'post_detail_screen.dart';
-import 'home_screen.dart'; 
+import 'home_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({Key? key}) : super(key: key);
@@ -47,18 +47,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       await context.read<NotificationProvider>().markAsRead(notification.id!);
     }
 
-    // 🔥 Handle vaccine reminder - navigate and show popup
+    //  Handle vaccine reminder - navigate and show popup
     if (notification.type == 'vaccine_reminder') {
       if (mounted) {
         // Pop back to home and navigate to vaccination tab
         Navigator.of(context).popUntil((route) => route.isFirst);
-        
+
         // Navigate to HomeScreen and pass vaccination ID to show popup
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => HomeScreen(
-              initialIndex: 2, // Tab 2 = Lịch tiêm
-              vaccinationIdToShow: notification.vaccinationId, // 🆕 Truyền ID để show popup
+              initialIndex: 2,
+              vaccinationIdToShow: notification.vaccinationId,
             ),
           ),
         );
@@ -393,7 +393,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: notification.getIconColor(),
-                // 🔥 FIXED: For vaccine reminders, show vaccine icon instead of user avatar
+
                 child: notification.type == 'vaccine_reminder'
                     ? Icon(
                         notification.getIcon(),
@@ -441,7 +441,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ],
           ),
           title: Text(
-            // 🔥 FIXED: Use the proper message from notification model
             notification.getMessage(),
             style: TextStyle(
               fontSize: 15,
@@ -454,7 +453,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🔥 REMOVED: Comment content section (only for comment notifications)
               if (notification.type == 'comment' &&
                   notification.commentContent != null) ...[
                 const SizedBox(height: 4),

@@ -12,7 +12,6 @@ class ThemeProvider extends ChangeNotifier {
     _loadThemeFromPrefs();
   }
 
-  // Load theme từ SharedPreferences khi khởi động
   Future<void> _loadThemeFromPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -24,7 +23,6 @@ class ThemeProvider extends ChangeNotifier {
     }
   }
 
-  // Lưu theme vào SharedPreferences
   Future<void> _saveThemeToPrefs(bool isDark) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -35,7 +33,9 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   void toggleTheme() {
-    _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    _themeMode = _themeMode == ThemeMode.light
+        ? ThemeMode.dark
+        : ThemeMode.light;
     _saveThemeToPrefs(_themeMode == ThemeMode.dark);
     notifyListeners();
   }
@@ -53,7 +53,7 @@ class ThemeProvider extends ChangeNotifier {
       brightness: Brightness.light,
       primaryColor: const Color(0xFFFF9966),
       scaffoldBackgroundColor: const Color(0xFFF5F5F5),
-      
+
       colorScheme: const ColorScheme.light(
         primary: Color(0xFFFF9966),
         secondary: Color(0xFFFF8C5A),
@@ -103,7 +103,7 @@ class ThemeProvider extends ChangeNotifier {
       brightness: Brightness.dark,
       primaryColor: const Color(0xFFFF9966),
       scaffoldBackgroundColor: const Color(0xFF121212),
-      
+
       colorScheme: const ColorScheme.dark(
         primary: Color(0xFFFF9966),
         secondary: Color(0xFFFF8C5A),
