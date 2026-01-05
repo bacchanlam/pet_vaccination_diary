@@ -8,10 +8,11 @@ import 'add_vaccination_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/vaccination.dart';
 import '../models/pet.dart';
+import '../widgets/mark_completed_dialog.dart';
 
 class VaccinationsListScreen extends StatefulWidget {
   final String? vaccinationIdToShow; // 🆕 ID của vaccination cần show popup
-  
+
   const VaccinationsListScreen({
     Key? key,
     this.vaccinationIdToShow, // 🆕
@@ -32,7 +33,7 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    
+
     // 🆕 Nếu có vaccinationId, tự động show popup sau khi build xong
     if (widget.vaccinationIdToShow != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -216,6 +217,47 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
           ),
         );
       },
+    );
+  }
+  void _showMarkCompletedDialog(
+    BuildContext context,
+    dynamic vaccination,
+    dynamic pet,
+    VaccinationProvider provider,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => MarkCompletedDialog(
+        vaccineName: vaccination.vaccineName,
+        petName: pet?.name ?? 'Thú cưng',
+        scheduledDate: vaccination.nextDate ?? DateTime.now(),
+        onConfirm: (notes) async {
+          final success = await provider.markAsCompletedAndCreateNew(
+            vaccinationId: vaccination.id!,
+            newNotes: notes,
+          );
+
+          if (context.mounted) {
+            if (success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✅ Đã xác nhận tiêm phòng thành công!'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('❌ Có lỗi xảy ra, vui lòng thử lại!'),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          }
+        },
+      ),
     );
   }
 
@@ -1050,6 +1092,41 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
                       : Colors.green,
                 ),
               ],
+              if (vaccination.canMarkAsCompleted() && 
+                vaccination.status == 'pending') ...[
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context); // Đóng bottom sheet
+                    _showMarkCompletedDialog(
+                      context,
+                      vaccination,
+                      pet,
+                      provider,
+                    );
+                  },
+                  icon: const Icon(Icons.check_circle, color: Colors.white),
+                  label: const Text(
+                    'Đã tiêm',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
               if (vaccination.notes != null &&
                   vaccination.notes!.isNotEmpty) ...[
                 const SizedBox(height: 24),
@@ -1070,6 +1147,7 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
                   ),
                 ),
               ],
+              
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -1129,6 +1207,7 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
         ),
       ),
     );
+    
   }
 
   Widget _buildDetailRow({
@@ -1220,6 +1299,7 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
       ),
     );
   }
+
   // 🆕 Hàm load và hiển thị chi tiết vaccination theo ID
   Future<void> _showVaccinationDetailsById(String vaccinationId) async {
     try {
@@ -1242,7 +1322,7 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
       }
 
       final vaccination = Vaccination.fromFirestore(vaccinationDoc);
-      
+
       // Load pet
       final petDoc = await FirebaseFirestore.instance
           .collection('pets')
@@ -1255,14 +1335,8 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
       if (mounted) {
         final vacProvider = context.read<VaccinationProvider>();
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        
-        _showVaccinationDetails(
-          context,
-          vaccination,
-          pet,
-          vacProvider,
-          isDark,
-        );
+
+        _showVaccinationDetails(context, vaccination, pet, vacProvider, isDark);
       }
     } catch (e) {
       print('❌ Error loading vaccination: $e');
@@ -1275,5 +1349,6 @@ class _VaccinationsListScreenState extends State<VaccinationsListScreen>
         );
       }
     }
+    
   }
 }

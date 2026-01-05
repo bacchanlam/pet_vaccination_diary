@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// lib/models/vaccination.dart
 class Vaccination {
   final String? id;
   final String petId;
@@ -7,6 +8,7 @@ class Vaccination {
   final DateTime vaccinationDate;
   final DateTime? nextDate;
   final String? notes;
+  final String status; // 🆕 'pending', 'completed'
   final DateTime createdAt;
 
   Vaccination({
@@ -16,10 +18,10 @@ class Vaccination {
     required this.vaccinationDate,
     this.nextDate,
     this.notes,
+    this.status = 'pending', // 🆕 Default
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  // Convert to Map for Firebase
   Map<String, dynamic> toMap() {
     return {
       'petId': petId,
@@ -27,11 +29,11 @@ class Vaccination {
       'vaccinationDate': Timestamp.fromDate(vaccinationDate),
       'nextDate': nextDate != null ? Timestamp.fromDate(nextDate!) : null,
       'notes': notes,
+      'status': status, // 🆕
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
 
-  // Create from Firebase document
   factory Vaccination.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Vaccination(
@@ -43,11 +45,21 @@ class Vaccination {
           ? (data['nextDate'] as Timestamp).toDate() 
           : null,
       notes: data['notes'],
+      status: data['status'] ?? 'pending', // 🆕
       createdAt: (data['createdAt'] as Timestamp).toDate(),
     );
   }
 
-  // Check if next vaccination is due soon
+  // 🆕 Kiểm tra có thể đánh dấu "Đã tiêm" không
+  bool canMarkAsCompleted() {
+    if (nextDate == null) return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduledDate = DateTime(nextDate!.year, nextDate!.month, nextDate!.day);
+    return scheduledDate.isBefore(today) || scheduledDate.isAtSameMomentAs(today);
+  }
+
+  // Existing methods...
   bool isDueSoon() {
     if (nextDate == null) return false;
     final now = DateTime.now();
@@ -55,7 +67,6 @@ class Vaccination {
     return difference <= 7 && difference >= 0;
   }
 
-  // Check if overdue
   bool isOverdue() {
     if (nextDate == null) return false;
     return nextDate!.isBefore(DateTime.now());
