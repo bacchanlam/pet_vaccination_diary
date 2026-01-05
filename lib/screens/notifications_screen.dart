@@ -4,7 +4,7 @@ import '../models/notification.dart';
 import '../providers/notification_provider.dart';
 import '../providers/post_provider.dart';
 import 'post_detail_screen.dart';
-import 'home_screen.dart'; // 🔥 NEW: Import HomeScreen
+import 'home_screen.dart'; 
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({Key? key}) : super(key: key);

@@ -15,7 +15,7 @@ class VaccinationProvider extends ChangeNotifier {
   // 🔥 SỬA: Load vaccinations CHỈ của pets thuộc user hiện tại
   Future<void> loadVaccinations() async {
     final user = _auth.currentUser;
-    
+
     if (user == null) {
       print('❌ No user logged in');
       _vaccinations = [];
@@ -47,12 +47,15 @@ class VaccinationProvider extends ChangeNotifier {
             .where('petId', whereIn: petIds)
             .get();
 
-        _vaccinations = vaccinationsSnapshot.docs
-            .map((doc) => Vaccination.fromFirestore(doc))
-            .toList()
-          ..sort((a, b) => b.vaccinationDate.compareTo(a.vaccinationDate));
+        _vaccinations =
+            vaccinationsSnapshot.docs
+                .map((doc) => Vaccination.fromFirestore(doc))
+                .toList()
+              ..sort((a, b) => b.vaccinationDate.compareTo(a.vaccinationDate));
 
-        print('✅ Loaded ${_vaccinations.length} vaccinations for user ${user.uid}');
+        print(
+          '✅ Loaded ${_vaccinations.length} vaccinations for user ${user.uid}',
+        );
       }
     } catch (e) {
       print('❌ Error loading vaccinations: $e');
@@ -65,9 +68,7 @@ class VaccinationProvider extends ChangeNotifier {
 
   // Get vaccinations for a specific pet
   List<Vaccination> getVaccinationsForPet(String petId) {
-    return _vaccinations
-        .where((v) => v.petId == petId)
-        .toList()
+    return _vaccinations.where((v) => v.petId == petId).toList()
       ..sort((a, b) => b.vaccinationDate.compareTo(a.vaccinationDate));
   }
 
@@ -77,8 +78,7 @@ class VaccinationProvider extends ChangeNotifier {
     return _vaccinations.where((v) {
       if (v.nextDate == null) return false;
       return v.nextDate!.isAfter(now) || v.nextDate!.isAtSameMomentAs(now);
-    }).toList()
-      ..sort((a, b) => a.nextDate!.compareTo(b.nextDate!));
+    }).toList()..sort((a, b) => a.nextDate!.compareTo(b.nextDate!));
   }
 
   // Get overdue vaccinations
@@ -121,6 +121,60 @@ class VaccinationProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       print('Error deleting vaccination: $e');
+      return false;
+    }
+  }
+
+  Future<bool> markAsCompletedAndCreateNew({
+    required String vaccinationId,
+    required String newNotes,
+    DateTime? customCompletionDate,
+  }) async {
+    try {
+      final vaccinationDoc = await _firestore
+          .collection('vaccinations')
+          .doc(vaccinationId)
+          .get();
+
+      if (!vaccinationDoc.exists) {
+        print('❌ Vaccination not found');
+        return false;
+      }
+
+      final oldVaccination = Vaccination.fromFirestore(vaccinationDoc);
+
+      // Bước 1: Cập nhật lịch cũ - RESET nextDate về null
+      await _firestore.collection('vaccinations').doc(vaccinationId).update({
+        'status': 'completed',
+        'nextDate': null, // 🔥 XÓA ngày tiêm tiếp theo
+        'notes': newNotes.isEmpty ? oldVaccination.notes : newNotes,
+      });
+
+      print('✅ Marked vaccination as completed and cleared nextDate');
+
+      // Bước 2: Tạo bản ghi mới (clone)
+      final completionDate = customCompletionDate ?? DateTime.now();
+
+      final newVaccination = Vaccination(
+        petId: oldVaccination.petId,
+        vaccineName: oldVaccination.vaccineName,
+        vaccinationDate: completionDate, // 🔥 Ngày tiêm = hôm nay
+        nextDate: null, // 🔥 Chưa có lịch tiếp theo
+        notes: newNotes.isEmpty ? null : newNotes,
+        status: 'completed', // 🔥 Đã hoàn thành
+        createdAt: DateTime.now(),
+      );
+
+      await _firestore.collection('vaccinations').add(newVaccination.toMap());
+
+      print('✅ Created new vaccination record');
+
+      // Reload danh sách
+      await loadVaccinations();
+
+      return true;
+    } catch (e) {
+      print('❌ Error marking as completed: $e');
       return false;
     }
   }
