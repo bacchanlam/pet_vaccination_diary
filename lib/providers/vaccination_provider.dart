@@ -12,7 +12,6 @@ class VaccinationProvider extends ChangeNotifier {
   List<Vaccination> get vaccinations => _vaccinations;
   bool get isLoading => _isLoading;
 
-  // 🔥 SỬA: Load vaccinations CHỈ của pets thuộc user hiện tại
   Future<void> loadVaccinations() async {
     final user = _auth.currentUser;
 
@@ -27,7 +26,6 @@ class VaccinationProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Bước 1: Lấy tất cả petIds của user
       final petsSnapshot = await _firestore
           .collection('pets')
           .where('userId', isEqualTo: user.uid)
@@ -41,7 +39,6 @@ class VaccinationProvider extends ChangeNotifier {
         _vaccinations = [];
         print('📋 No pets found for this user');
       } else {
-        // Bước 2: Lấy vaccinations của các pets này
         final vaccinationsSnapshot = await _firestore
             .collection('vaccinations')
             .where('petId', whereIn: petIds)
@@ -143,25 +140,22 @@ class VaccinationProvider extends ChangeNotifier {
 
       final oldVaccination = Vaccination.fromFirestore(vaccinationDoc);
 
-      // Bước 1: Cập nhật lịch cũ - RESET nextDate về null
       await _firestore.collection('vaccinations').doc(vaccinationId).update({
         'status': 'completed',
         'nextDate': null, // 🔥 XÓA ngày tiêm tiếp theo
-        'notes': newNotes.isEmpty ? oldVaccination.notes : newNotes,
       });
 
       print('✅ Marked vaccination as completed and cleared nextDate');
 
-      // Bước 2: Tạo bản ghi mới (clone)
       final completionDate = customCompletionDate ?? DateTime.now();
 
       final newVaccination = Vaccination(
         petId: oldVaccination.petId,
         vaccineName: oldVaccination.vaccineName,
-        vaccinationDate: completionDate, // 🔥 Ngày tiêm = hôm nay
-        nextDate: null, // 🔥 Chưa có lịch tiếp theo
+        vaccinationDate: completionDate,
+        nextDate: null,
         notes: newNotes.isEmpty ? null : newNotes,
-        status: 'completed', // 🔥 Đã hoàn thành
+        status: 'completed',
         createdAt: DateTime.now(),
       );
 
@@ -169,7 +163,6 @@ class VaccinationProvider extends ChangeNotifier {
 
       print('✅ Created new vaccination record');
 
-      // Reload danh sách
       await loadVaccinations();
 
       return true;

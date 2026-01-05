@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// lib/models/vaccination.dart
 class Vaccination {
   final String? id;
   final String petId;
@@ -8,7 +7,7 @@ class Vaccination {
   final DateTime vaccinationDate;
   final DateTime? nextDate;
   final String? notes;
-  final String status; // 🆕 'pending', 'completed'
+  final String status;
   final DateTime createdAt;
 
   Vaccination({
@@ -18,7 +17,7 @@ class Vaccination {
     required this.vaccinationDate,
     this.nextDate,
     this.notes,
-    this.status = 'pending', // 🆕 Default
+    this.status = 'pending',
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -41,8 +40,8 @@ class Vaccination {
       petId: data['petId'] ?? '',
       vaccineName: data['vaccineName'] ?? '',
       vaccinationDate: (data['vaccinationDate'] as Timestamp).toDate(),
-      nextDate: data['nextDate'] != null 
-          ? (data['nextDate'] as Timestamp).toDate() 
+      nextDate: data['nextDate'] != null
+          ? (data['nextDate'] as Timestamp).toDate()
           : null,
       notes: data['notes'],
       status: data['status'] ?? 'pending', // 🆕
@@ -50,16 +49,19 @@ class Vaccination {
     );
   }
 
-  // 🆕 Kiểm tra có thể đánh dấu "Đã tiêm" không
   bool canMarkAsCompleted() {
     if (nextDate == null) return false;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final scheduledDate = DateTime(nextDate!.year, nextDate!.month, nextDate!.day);
-    return scheduledDate.isBefore(today) || scheduledDate.isAtSameMomentAs(today);
+    final scheduledDate = DateTime(
+      nextDate!.year,
+      nextDate!.month,
+      nextDate!.day,
+    );
+    return scheduledDate.isBefore(today) ||
+        scheduledDate.isAtSameMomentAs(today);
   }
 
-  // Existing methods...
   bool isDueSoon() {
     if (nextDate == null) return false;
     final now = DateTime.now();

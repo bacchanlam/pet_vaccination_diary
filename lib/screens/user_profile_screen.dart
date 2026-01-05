@@ -44,8 +44,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
     // Load user's posts
     final allPosts = context.read<PostProvider>().posts;
-    _userPosts =
-        allPosts.where((post) => post.userId == widget.userId).toList();
+    _userPosts = allPosts
+        .where((post) => post.userId == widget.userId)
+        .toList();
 
     setState(() => _isLoading = false);
   }
@@ -127,8 +128,12 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                                     shape: BoxShape.circle,
                                     gradient: LinearGradient(
                                       colors: [
-                                        const Color(0xFFFF9966).withOpacity(0.3),
-                                        const Color(0xFFFF8C5A).withOpacity(0.1),
+                                        const Color(
+                                          0xFFFF9966,
+                                        ).withOpacity(0.3),
+                                        const Color(
+                                          0xFFFF8C5A,
+                                        ).withOpacity(0.1),
                                       ],
                                     ),
                                   ),
@@ -145,8 +150,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFFFF9966)
-                                            .withOpacity(0.3),
+                                        color: const Color(
+                                          0xFFFF9966,
+                                        ).withOpacity(0.3),
                                         blurRadius: 20,
                                         spreadRadius: 5,
                                       ),
@@ -157,9 +163,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                                     backgroundColor: const Color(0xFFFF9966),
                                     backgroundImage:
                                         _userProfile?.avatarUrl != null
-                                            ? NetworkImage(
-                                                _userProfile!.avatarUrl!)
-                                            : null,
+                                        ? NetworkImage(_userProfile!.avatarUrl!)
+                                        : null,
                                     child: _userProfile?.avatarUrl == null
                                         ? Text(
                                             _getDisplayName()
@@ -256,11 +261,13 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                                     label: 'Theo dõi',
                                     isPrimary: true,
                                     onTap: () {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         const SnackBar(
                                           content: Text(
-                                              'Tính năng đang phát triển'),
+                                            'Tính năng đang phát triển',
+                                          ),
                                         ),
                                       );
                                     },
@@ -273,11 +280,13 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                                     label: 'Nhắn tin',
                                     isPrimary: false,
                                     onTap: () {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         const SnackBar(
                                           content: Text(
-                                              'Tính năng đang phát triển'),
+                                            'Tính năng đang phát triển',
+                                          ),
                                         ),
                                       );
                                     },
@@ -301,10 +310,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                           indicatorColor: const Color(0xFFFF9966),
                           indicatorWeight: 3,
                           tabs: const [
-                            Tab(
-                              icon: Icon(Icons.grid_on),
-                              text: 'Bài viết',
-                            ),
+                            Tab(icon: Icon(Icons.grid_on), text: 'Bài viết'),
                             Tab(
                               icon: Icon(Icons.bookmark_border),
                               text: 'Đã lưu',
@@ -375,10 +381,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
         ],
@@ -393,9 +396,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     required VoidCallback onTap,
   }) {
     return Material(
-      color: isPrimary
-          ? const Color(0xFFFF9966)
-          : Colors.grey[200],
+      color: isPrimary ? const Color(0xFFFF9966) : Colors.grey[200],
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -456,10 +457,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
             const SizedBox(height: 8),
             Text(
               'Người dùng này chưa đăng bài viết nào',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -505,10 +503,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           const SizedBox(height: 8),
           Text(
             'Tính năng đang phát triển',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
         ],
       ),
@@ -529,7 +524,10 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: _tabBar,

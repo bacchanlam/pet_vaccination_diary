@@ -12,14 +12,13 @@ class AuthService {
   // Auth state changes stream
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // 🆕 Lưu thông tin user vào Firestore
   Future<void> _saveUserToFirestore(User user, String name) async {
     try {
       final userProfile = UserProfile(
         uid: user.uid,
         name: name,
         email: user.email ?? '',
-        avatarUrl: null, // Ban đầu chưa có avatar
+        avatarUrl: null,
       );
 
       await _firestore
@@ -52,12 +51,10 @@ class AuthService {
       // Update display name
       await result.user?.updateDisplayName(name);
 
-      // 🆕 Lưu thông tin user vào Firestore
       if (createdUser != null) {
         await _saveUserToFirestore(createdUser, name);
       }
 
-      // Gửi email xác thực
       await result.user?.sendEmailVerification();
       print(
         '✅ Firebase signUp successful - Verification email sent to ${result.user?.email}',
@@ -89,7 +86,6 @@ class AuthService {
         if (createdUser != null) {
           print('✅ User was created successfully: ${createdUser.email}');
 
-          // Lưu vào Firestore
           await _saveUserToFirestore(createdUser, name);
 
           try {
@@ -206,7 +202,6 @@ class AuthService {
     }
   }
 
-  // Kiểm tra và reload trạng thái email verification
   Future<bool> checkEmailVerified() async {
     try {
       final user = _auth.currentUser;
@@ -261,7 +256,6 @@ class AuthService {
     }
   }
 
-  // Gửi lại email xác thực
   Future<String?> resendVerificationEmail() async {
     try {
       final user = _auth.currentUser;
@@ -304,7 +298,6 @@ class AuthService {
     }
   }
 
-  // 🆕 Cập nhật thông tin user profile
   Future<String?> updateUserProfile({
     required String uid,
     String? name,
@@ -316,11 +309,9 @@ class AuthService {
       if (name != null) {
         updates['name'] = name;
         try {
-          // Đây là dòng gây lỗi Pigeon trên Android
           await _auth.currentUser?.updateDisplayName(name);
         } catch (e) {
           print('⚠️ Firebase updateDisplayName bug ignored: $e');
-          // Nếu là lỗi Pigeon, ta vẫn tiếp tục vì Firestore quan trọng hơn
         }
       }
 
@@ -337,7 +328,7 @@ class AuthService {
       return null;
     } catch (e) {
       final errorString = e.toString();
-      // Kiểm tra nếu là lỗi Pigeon thì vẫn coi như thành công nếu Firestore đã xong
+
       if (errorString.contains('Pigeon') ||
           errorString.contains('List<Object?>')) {
         print('⚠️ Ignored Pigeon error during profile update');
@@ -349,7 +340,6 @@ class AuthService {
     }
   }
 
-  // 🆕 Lấy thông tin user profile từ Firestore
   Future<UserProfile?> getUserProfile(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();

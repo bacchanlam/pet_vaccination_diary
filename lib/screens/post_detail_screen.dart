@@ -56,7 +56,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       content: _commentController.text.trim(),
       userName: userProfile?.name ?? user.displayName ?? 'Unknown',
       userAvatar: userProfile?.avatarUrl,
-      notificationProvider: context.read<NotificationProvider>(), // 🆕 THÊM
+      notificationProvider: context.read<NotificationProvider>(),
     );
 
     setState(() => _isSendingComment = false);
@@ -351,8 +351,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   Widget _buildCommentItem(Comment comment) {
     final currentUser = FirebaseAuth.instance.currentUser;
     final isMyComment = currentUser?.uid == comment.userId;
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark; 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -384,9 +383,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.grey[800]
-                        : Colors.grey[200], 
+                    color: isDark ? Colors.grey[800] : Colors.grey[200],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -403,7 +400,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                               color: isDark ? Colors.white : Colors.black,
                             ),
                           ),
-                          // Nút xóa nếu là comment của mình
+
                           if (isMyComment)
                             InkWell(
                               onTap: () => _showDeleteCommentDialog(comment),
@@ -434,10 +431,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 const SizedBox(height: 4),
                 Text(
                   _getTimeAgo(comment.createdAt),
-                  style: TextStyle(
-                    color: Colors.grey[500], 
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
                 ),
               ],
             ),

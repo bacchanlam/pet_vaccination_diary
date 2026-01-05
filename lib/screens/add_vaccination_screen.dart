@@ -8,11 +8,8 @@ class AddVaccinationScreen extends StatefulWidget {
   final String petId;
   final Vaccination? vaccination;
 
-  const AddVaccinationScreen({
-    Key? key,
-    required this.petId,
-    this.vaccination,
-  }) : super(key: key);
+  const AddVaccinationScreen({Key? key, required this.petId, this.vaccination})
+    : super(key: key);
 
   @override
   State<AddVaccinationScreen> createState() => _AddVaccinationScreenState();
@@ -126,9 +123,11 @@ class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.vaccination != null
-                ? 'Cập nhật thành công!'
-                : 'Thêm lịch tiêm thành công!'),
+            content: Text(
+              widget.vaccination != null
+                  ? 'Cập nhật thành công!'
+                  : 'Thêm lịch tiêm thành công!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -149,9 +148,9 @@ class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.vaccination != null
-            ? 'Sửa lịch tiêm'
-            : 'Thêm lịch tiêm'),
+        title: Text(
+          widget.vaccination != null ? 'Sửa lịch tiêm' : 'Thêm lịch tiêm',
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -161,10 +160,7 @@ class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
             // Common vaccines chips
             const Text(
               'Vaccine phổ biến:',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -249,9 +245,11 @@ class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(_nextDate != null
-                          ? DateFormat('dd/MM/yyyy').format(_nextDate!)
-                          : 'Chọn ngày'),
+                      Text(
+                        _nextDate != null
+                            ? DateFormat('dd/MM/yyyy').format(_nextDate!)
+                            : 'Chọn ngày',
+                      ),
                       const Icon(Icons.arrow_drop_down),
                     ],
                   ),
@@ -286,7 +284,9 @@ class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : Text(
-                      widget.vaccination != null ? 'Cập nhật' : 'Thêm lịch tiêm',
+                      widget.vaccination != null
+                          ? 'Cập nhật'
+                          : 'Thêm lịch tiêm',
                       style: const TextStyle(fontSize: 16),
                     ),
             ),

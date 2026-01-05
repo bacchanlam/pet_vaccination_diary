@@ -107,7 +107,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     }
 
-    // Cập nhật thông tin
     final error = await _authService.updateUserProfile(
       uid: user.uid,
       name: _nameController.text.trim(),
@@ -118,7 +117,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (error == null) {
       if (mounted) {
-        Navigator.pop(context, true); // Trả về true để reload
+        Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Cập nhật thành công!'),
@@ -129,10 +128,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(error), backgroundColor: Colors.red),
         );
       }
     }
@@ -143,9 +139,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chỉnh sửa hồ sơ'),
-      ),
+      appBar: AppBar(title: const Text('Chỉnh sửa hồ sơ')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -185,15 +179,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       fit: BoxFit.cover,
                                     )
                                   : _currentAvatarUrl != null
-                                      ? Image.network(
-                                          _currentAvatarUrl!,
-                                          width: 150,
-                                          height: 150,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stack) =>
-                                              _buildDefaultAvatar(),
-                                        )
-                                      : _buildDefaultAvatar(),
+                                  ? Image.network(
+                                      _currentAvatarUrl!,
+                                      width: 150,
+                                      height: 150,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stack) =>
+                                          _buildDefaultAvatar(),
+                                    )
+                                  : _buildDefaultAvatar(),
                             ),
                           ),
                           Positioned(
@@ -218,10 +212,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 16),
                     Text(
                       'Nhấn để thay đổi ảnh đại diện',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                     const SizedBox(height: 40),
 
@@ -236,9 +227,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: isDark
-                            ? Colors.grey[800]
-                            : Colors.grey[100],
+                        fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
                       ),
                     ),
                     const SizedBox(height: 16),

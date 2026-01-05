@@ -19,7 +19,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _cloudinaryService = CloudinaryService();
   final _imagePicker = ImagePicker();
   final _authService = AuthService();
-  
+
   File? _imageFile;
   bool _isLoading = false;
 
@@ -46,7 +46,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi chọn ảnh: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Lỗi chọn ảnh: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -76,7 +79,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         setState(() => _isLoading = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Lỗi upload ảnh'), backgroundColor: Colors.red),
+            const SnackBar(
+              content: Text('Lỗi upload ảnh'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
         return;
@@ -85,18 +91,21 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     // Create post
     final success = await context.read<PostProvider>().createPost(
-          content: _contentController.text.trim(),
-          imageUrl: imageUrl,
-          userName: userProfile?.name ?? user.displayName ?? 'Unknown',
-          userAvatar: userProfile?.avatarUrl,
-        );
+      content: _contentController.text.trim(),
+      imageUrl: imageUrl,
+      userName: userProfile?.name ?? user.displayName ?? 'Unknown',
+      userAvatar: userProfile?.avatarUrl,
+    );
 
     setState(() => _isLoading = false);
 
     if (success && mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đăng bài thành công!'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Đăng bài thành công!'),
+          backgroundColor: Colors.green,
+        ),
       );
     }
   }

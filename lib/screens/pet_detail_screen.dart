@@ -20,7 +20,6 @@ class PetDetailScreen extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // App Bar với ảnh nền
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
@@ -76,8 +75,7 @@ class PetDetailScreen extends StatelessWidget {
                       ? Image.network(
                           pet.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stack) =>
-                              Container(
+                          errorBuilder: (context, error, stack) => Container(
                             color: Colors.grey[300],
                             child: const Icon(Icons.pets, size: 80),
                           ),
@@ -114,10 +112,7 @@ class PetDetailScreen extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                             shadows: [
-                              Shadow(
-                                color: Colors.black,
-                                blurRadius: 8,
-                              ),
+                              Shadow(color: Colors.black, blurRadius: 8),
                             ],
                           ),
                         ),
@@ -351,18 +346,15 @@ class PetDetailScreen extends StatelessWidget {
               return SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final vaccination = vaccinations[index];
-                      return _buildVaccinationCard(
-                        context,
-                        vaccination,
-                        provider,
-                        isDark,
-                      );
-                    },
-                    childCount: vaccinations.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final vaccination = vaccinations[index];
+                    return _buildVaccinationCard(
+                      context,
+                      vaccination,
+                      provider,
+                      isDark,
+                    );
+                  }, childCount: vaccinations.length),
                 ),
               );
             },
@@ -418,11 +410,7 @@ class PetDetailScreen extends StatelessWidget {
             color: const Color(0xFFFF9966).withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            icon,
-            color: const Color(0xFFFF9966),
-            size: 20,
-          ),
+          child: Icon(icon, color: const Color(0xFFFF9966), size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -431,10 +419,7 @@ class PetDetailScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               const SizedBox(height: 4),
               Text(
@@ -470,8 +455,8 @@ class PetDetailScreen extends StatelessWidget {
           color: isOverdue
               ? Colors.red.withOpacity(0.3)
               : isDueSoon
-                  ? Colors.orange.withOpacity(0.3)
-                  : Colors.transparent,
+              ? Colors.orange.withOpacity(0.3)
+              : Colors.transparent,
           width: 2,
         ),
         boxShadow: [
@@ -495,8 +480,8 @@ class PetDetailScreen extends StatelessWidget {
                     color: isOverdue
                         ? Colors.red.withOpacity(0.1)
                         : isDueSoon
-                            ? Colors.orange.withOpacity(0.1)
-                            : const Color(0xFFFF9966).withOpacity(0.1),
+                        ? Colors.orange.withOpacity(0.1)
+                        : const Color(0xFFFF9966).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -504,8 +489,8 @@ class PetDetailScreen extends StatelessWidget {
                     color: isOverdue
                         ? Colors.red
                         : isDueSoon
-                            ? Colors.orange
-                            : const Color(0xFFFF9966),
+                        ? Colors.orange
+                        : const Color(0xFFFF9966),
                     size: 24,
                   ),
                 ),
@@ -524,12 +509,10 @@ class PetDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        DateFormat('dd/MM/yyyy')
-                            .format(vaccination.vaccinationDate),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                        ),
+                        DateFormat(
+                          'dd/MM/yyyy',
+                        ).format(vaccination.vaccinationDate),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -587,8 +570,8 @@ class PetDetailScreen extends StatelessWidget {
                   color: isOverdue
                       ? Colors.red.withOpacity(0.1)
                       : isDueSoon
-                          ? Colors.orange.withOpacity(0.1)
-                          : Colors.green.withOpacity(0.1),
+                      ? Colors.orange.withOpacity(0.1)
+                      : Colors.green.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -597,30 +580,30 @@ class PetDetailScreen extends StatelessWidget {
                       isOverdue
                           ? Icons.error
                           : isDueSoon
-                              ? Icons.warning
-                              : Icons.event,
+                          ? Icons.warning
+                          : Icons.event,
                       size: 18,
                       color: isOverdue
                           ? Colors.red
                           : isDueSoon
-                              ? Colors.orange
-                              : Colors.green,
+                          ? Colors.orange
+                          : Colors.green,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       isOverdue
                           ? 'Đã quá hạn: '
                           : isDueSoon
-                              ? 'Sắp đến hạn: '
-                              : 'Tiêm tiếp theo: ',
+                          ? 'Sắp đến hạn: '
+                          : 'Tiêm tiếp theo: ',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: isOverdue
                             ? Colors.red
                             : isDueSoon
-                                ? Colors.orange
-                                : Colors.green,
+                            ? Colors.orange
+                            : Colors.green,
                       ),
                     ),
                     Text(
@@ -631,33 +614,26 @@ class PetDetailScreen extends StatelessWidget {
                         color: isOverdue
                             ? Colors.red
                             : isDueSoon
-                                ? Colors.orange
-                                : Colors.green,
+                            ? Colors.orange
+                            : Colors.green,
                       ),
                     ),
                   ],
                 ),
               ),
             ],
-            if (vaccination.notes != null &&
-                vaccination.notes!.isNotEmpty) ...[
+            if (vaccination.notes != null && vaccination.notes!.isNotEmpty) ...[
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.grey[800]
-                      : Colors.grey[100],
+                  color: isDark ? Colors.grey[800] : Colors.grey[100],
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.note,
-                      size: 18,
-                      color: Colors.grey[600],
-                    ),
+                    Icon(Icons.note, size: 18, color: Colors.grey[600]),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -682,12 +658,12 @@ class PetDetailScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc muốn xóa ${pet.name}? '
-            'Tất cả lịch tiêm cũng sẽ bị xóa.'),
+        content: Text(
+          'Bạn có chắc muốn xóa ${pet.name}? '
+          'Tất cả lịch tiêm cũng sẽ bị xóa.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -696,8 +672,9 @@ class PetDetailScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              final success =
-                  await context.read<PetProvider>().deletePet(pet.id!);
+              final success = await context.read<PetProvider>().deletePet(
+                pet.id!,
+              );
               if (success && context.mounted) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -708,13 +685,8 @@ class PetDetailScreen extends StatelessWidget {
                 );
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text(
-              'Xóa',
-              style: TextStyle(color: Colors.white),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Xóa', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -729,9 +701,7 @@ class PetDetailScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Xác nhận xóa'),
         content: const Text('Bạn có chắc muốn xóa lịch tiêm này?'),
         actions: [
@@ -752,13 +722,8 @@ class PetDetailScreen extends StatelessWidget {
                 );
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text(
-              'Xóa',
-              style: TextStyle(color: Colors.white),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Xóa', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

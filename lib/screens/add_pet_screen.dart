@@ -110,7 +110,6 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
     String? uploadedImageUrl = _imageUrl;
 
-    // Upload ảnh lên Cloudinary nếu có chọn ảnh mới
     if (_imageFile != null) {
       uploadedImageUrl = await _cloudinaryService.uploadImage(_imageFile!);
 
@@ -130,9 +129,8 @@ class _AddPetScreenState extends State<AddPetScreen> {
       }
     }
 
-    // 🆕 userId sẽ được gán tự động trong PetProvider.addPet()
     final pet = Pet(
-      userId: '', // 🔥 Tạm để rỗng, sẽ được gán trong provider
+      userId: '',
       name: _nameController.text.trim(),
       type: _selectedType,
       breed: _breedController.text.trim(),
