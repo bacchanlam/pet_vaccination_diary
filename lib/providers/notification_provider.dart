@@ -50,6 +50,7 @@ class NotificationProvider extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
+
   Future<void> checkVaccinationReminders() async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -80,17 +81,27 @@ class NotificationProvider extends ChangeNotifier {
     final user = _auth.currentUser;
     if (user == null || user.uid == postOwnerId) {
       print('⚠️ Skip notification: user is null or liking own post');
-      return; // Không tạo thông báo cho chính mình
+      return;
     }
 
     try {
       print('🔔 Creating like notification...');
-      print('   Post owner: $postOwnerId');
-      print('   From user: ${user.uid} ($fromUserName)');
-      print('   Post ID: $postId');
+      
+      // 🔥 FIX: Kiểm tra xem đã có thông báo like cho post này từ user này chưa
+      final existingNotification = await _firestore
+          .collection('notifications')
+          .where('userId', isEqualTo: postOwnerId)
+          .where('fromUserId', isEqualTo: user.uid)
+          .where('postId', isEqualTo: postId)
+          .where('type', isEqualTo: 'like')
+          .limit(1)
+          .get();
 
-      // Tạo thông báo trực tiếp, không kiểm tra duplicate
-      // (Firestore sẽ tự động lưu nhiều thông báo nếu like nhiều lần)
+      if (existingNotification.docs.isNotEmpty) {
+        print('⚠️ Like notification already exists, skipping...');
+        return;
+      }
+
       final notification = AppNotification(
         userId: postOwnerId,
         fromUserId: user.uid,
@@ -117,8 +128,6 @@ class NotificationProvider extends ChangeNotifier {
 
     try {
       print('🗑️ Deleting like notification...');
-      print('   Post owner: $postOwnerId');
-      print('   From user: ${user.uid}');
 
       final snapshot = await _firestore
           .collection('notifications')
@@ -126,7 +135,7 @@ class NotificationProvider extends ChangeNotifier {
           .where('fromUserId', isEqualTo: user.uid)
           .where('postId', isEqualTo: postId)
           .where('type', isEqualTo: 'like')
-          .limit(1) // Chỉ xóa 1 thông báo
+          .limit(1)
           .get();
 
       for (var doc in snapshot.docs) {
@@ -151,8 +160,9 @@ class NotificationProvider extends ChangeNotifier {
     required String commentContent,
   }) async {
     final user = _auth.currentUser;
-    if (user == null || user.uid == postOwnerId)
-      return; // Không tạo thông báo cho chính mình
+    if (user == null || user.uid == postOwnerId) {
+      return;
+    }
 
     try {
       final notification = AppNotification(
@@ -174,34 +184,45 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  // Mark notification as read
+  // 🔥 FIX: Mark notification as read - CẬP NHẬT LOCAL STATE ĐÚNG CÁCH
   Future<void> markAsRead(String notificationId) async {
     try {
+      // Update Firestore
       await _firestore.collection('notifications').doc(notificationId).update({
         'isRead': true,
       });
 
-      // Update local state
+      // 🔥 FIX: Update local state - Tìm và cập nhật notification
       final index = _notifications.indexWhere((n) => n.id == notificationId);
       if (index != -1) {
+        final oldNotification = _notifications[index];
+        
+        // Tạo notification mới với isRead = true
         _notifications[index] = AppNotification(
-          id: _notifications[index].id,
-          userId: _notifications[index].userId,
-          fromUserId: _notifications[index].fromUserId,
-          fromUserName: _notifications[index].fromUserName,
-          fromUserAvatar: _notifications[index].fromUserAvatar,
-          type: _notifications[index].type,
-          postId: _notifications[index].postId,
-          commentContent: _notifications[index].commentContent,
-          isRead: true,
-          createdAt: _notifications[index].createdAt,
+          id: oldNotification.id,
+          userId: oldNotification.userId,
+          fromUserId: oldNotification.fromUserId,
+          fromUserName: oldNotification.fromUserName,
+          fromUserAvatar: oldNotification.fromUserAvatar,
+          type: oldNotification.type,
+          postId: oldNotification.postId,
+          vaccinationId: oldNotification.vaccinationId,
+          petId: oldNotification.petId,
+          petName: oldNotification.petName,
+          vaccineName: oldNotification.vaccineName,
+          daysRemaining: oldNotification.daysRemaining,
+          nextVaccinationDate: oldNotification.nextVaccinationDate,
+          commentContent: oldNotification.commentContent,
+          isRead: true, // 🔥 ĐÂY LÀ ĐIỂM QUAN TRỌNG
+          createdAt: oldNotification.createdAt,
         );
 
+        // Recalculate unread count
         _unreadCount = _notifications.where((n) => !n.isRead).length;
+        
+        print('✅ Notification marked as read - Unread count: $_unreadCount');
         notifyListeners();
       }
-
-      print('✅ Notification marked as read');
     } catch (e) {
       print('❌ Error marking notification as read: $e');
     }
@@ -226,17 +247,24 @@ class NotificationProvider extends ChangeNotifier {
       // Update local state
       for (var i = 0; i < _notifications.length; i++) {
         if (!_notifications[i].isRead) {
+          final oldNotification = _notifications[i];
           _notifications[i] = AppNotification(
-            id: _notifications[i].id,
-            userId: _notifications[i].userId,
-            fromUserId: _notifications[i].fromUserId,
-            fromUserName: _notifications[i].fromUserName,
-            fromUserAvatar: _notifications[i].fromUserAvatar,
-            type: _notifications[i].type,
-            postId: _notifications[i].postId,
-            commentContent: _notifications[i].commentContent,
+            id: oldNotification.id,
+            userId: oldNotification.userId,
+            fromUserId: oldNotification.fromUserId,
+            fromUserName: oldNotification.fromUserName,
+            fromUserAvatar: oldNotification.fromUserAvatar,
+            type: oldNotification.type,
+            postId: oldNotification.postId,
+            vaccinationId: oldNotification.vaccinationId,
+            petId: oldNotification.petId,
+            petName: oldNotification.petName,
+            vaccineName: oldNotification.vaccineName,
+            daysRemaining: oldNotification.daysRemaining,
+            nextVaccinationDate: oldNotification.nextVaccinationDate,
+            commentContent: oldNotification.commentContent,
             isRead: true,
-            createdAt: _notifications[i].createdAt,
+            createdAt: oldNotification.createdAt,
           );
         }
       }
